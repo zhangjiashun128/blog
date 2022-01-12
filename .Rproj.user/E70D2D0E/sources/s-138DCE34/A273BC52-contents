@@ -74,10 +74,10 @@ params:
     Twitter: yes
     copyright: This work is licensed under a Creative Commons Attribution-NonCommercial
       4.0 International License.
-  since: 2012
+  since: 2022
   social:
     Facebook: xxxx
-    GitHub: xxxx
+    GitHub: https://github.com/zhangjiashun128
     Linkedin: xxxx
     Twitter: xxxx
   socialShare: yes
@@ -89,7 +89,7 @@ params:
     appId: your appId
     appKey: your appKey
     avatar: mm
-    enable: no
+    enable: yes
     language: en
     notify: no
     placeholder: your comments ...
