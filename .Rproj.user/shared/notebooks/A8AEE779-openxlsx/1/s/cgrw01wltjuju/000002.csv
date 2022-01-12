@@ -1,0 +1,4 @@
+"0","data <- read.xlsx('test.xlsx', #要读取的xlsx文件"
+"0","                  sheet = 2,"
+"0","                  detectDates = TRUE, #识别日期数据并进行转换"
+"0","                  fillMergedCells = TRUE)#若为TRUE,则合并单元格中的值将其提供给合并的所有单元格。"

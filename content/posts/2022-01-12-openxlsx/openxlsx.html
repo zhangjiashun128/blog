@@ -1,0 +1,213 @@
+---
+title: Openxlsx的使用
+author: zhangjiashun
+date: '2022-01-12'
+slug: []
+categories:
+  - R
+tags:
+  - R Markdown
+description: ~
+featured_image: ~
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="openxlsx包的主要函数列表" class="section level2">
+<h2>1. openxlsx包的主要函数列表</h2>
+<table>
+<caption>openxlsx包的主要函数列表</caption>
+<thead>
+<tr class="header">
+<th>函数名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>createWorkbook</td>
+<td>创建一个工作簿</td>
+</tr>
+<tr class="even">
+<td>addWorksheet</td>
+<td>为工作簿添加一个工作表</td>
+</tr>
+<tr class="odd">
+<td>mergeCells</td>
+<td>合并单元格</td>
+</tr>
+<tr class="even">
+<td>makeHyperlinkString</td>
+<td>创建超链接</td>
+</tr>
+<tr class="odd">
+<td>writeData</td>
+<td>将数据写入到工作表</td>
+</tr>
+<tr class="even">
+<td>insertImage</td>
+<td>将图片插入到工作表</td>
+</tr>
+<tr class="odd">
+<td>insertPlot</td>
+<td>将当前绘图插入到工作表</td>
+</tr>
+<tr class="even">
+<td>getSheetNames</td>
+<td>获取工作表名字</td>
+</tr>
+<tr class="odd">
+<td>renameWorksheet</td>
+<td>重命名工作表</td>
+</tr>
+<tr class="even">
+<td>conditionalFormat</td>
+<td>为单元格添加条件格式</td>
+</tr>
+<tr class="odd">
+<td>addStyle</td>
+<td>为单元格设置格式</td>
+</tr>
+<tr class="even">
+<td>addFilter</td>
+<td>为工作表添加筛选功能</td>
+</tr>
+<tr class="odd">
+<td>replaceStyle</td>
+<td>替换单元格格式</td>
+</tr>
+<tr class="even">
+<td>freezePane</td>
+<td>冻结工作表窗口</td>
+</tr>
+<tr class="odd">
+<td>worksheetOrder</td>
+<td>对工作表进行排序</td>
+</tr>
+<tr class="even">
+<td>modifyBaseFont</td>
+<td>设置默认字体</td>
+</tr>
+<tr class="odd">
+<td>saveWorkbook</td>
+<td>保存工作簿到文件</td>
+</tr>
+<tr class="even">
+<td>setRowHeights</td>
+<td>设置工作表行高</td>
+</tr>
+<tr class="odd">
+<td>showGridLines</td>
+<td>隐藏网格线</td>
+</tr>
+<tr class="even">
+<td>setColWidths</td>
+<td>设置工作表列宽</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="openxlsx包的使用介绍" class="section level2">
+<h2>2. openxlsx包的使用介绍</h2>
+<div id="创建excel文档" class="section level3">
+<h3>2.1 创建Excel文档</h3>
+<p>使用createWorkbook()创建一个Excel工作簿，然后使用saveWorkbook()将工作簿保存到本地文件夹中。</p>
+<pre class="r"><code>library(openxlsx)
+wb &lt;- createWorkbook()
+
+saveWorkbook(wb, file = &#39;test.xlsx&#39;, overwrite = T)</code></pre>
+<pre><code>## Warning: Workbook does not contain any worksheets. A worksheet will be added.</code></pre>
+</div>
+</div>
+<div id="数据读取与输出" class="section level2">
+<h2>2.2 数据读取与输出</h2>
+<div id="数据输出" class="section level3">
+<h3>2.2.1 数据输出</h3>
+<pre class="r"><code>addWorksheet(wb, &quot;iris&quot;) #在Excel表中增加iris工作表
+iris_head &lt;- head(iris, 20) 
+#查看iris的前20行
+writeData(wb, #之前创建的Excel表
+          &quot;iris&quot;, #指定写入数据的工作表
+          iris_head, #要写入工作表的数据
+          startCol = 1, #从哪一列开始写入数据
+          startRow = 1, #从哪一行开始写入数据
+          rowNames = TRUE #写入数据框的行名
+          )
+saveWorkbook(wb,
+             file = &#39;test.xlsx&#39;,
+             overwrite =TRUE)
+             #为TRUE时覆盖已经存在的文件</code></pre>
+</div>
+<div id="数据读入" class="section level3">
+<h3>2.2.2 数据读入</h3>
+<pre class="r"><code>data &lt;- read.xlsx(&#39;test.xlsx&#39;, #要读取的xlsx文件
+                  sheet = 2,
+                  detectDates = TRUE, #识别日期数据并进行转换
+                  fillMergedCells = TRUE)#若为TRUE,则合并单元格中的值将其提供给合并的所有单元格。</code></pre>
+<pre class="r"><code>head(data)</code></pre>
+<pre><code>##     Sepal.Length Sepal.Width Petal.Length Petal.Width Species
+## 1 1          5.1         3.5          1.4         0.2  setosa
+## 2 2          4.9         3.0          1.4         0.2  setosa
+## 3 3          4.7         3.2          1.3         0.2  setosa
+## 4 4          4.6         3.1          1.5         0.2  setosa
+## 5 5          5.0         3.6          1.4         0.2  setosa
+## 6 6          5.4         3.9          1.7         0.4  setosa</code></pre>
+</div>
+</div>
+<div id="修改输出格式与数据格式" class="section level2">
+<h2>2.3 修改输出格式与数据格式</h2>
+<div id="增加筛选器" class="section level3">
+<h3>2.3.1 增加筛选器</h3>
+<p>以mtcars数据集为例。先将数据集插入到以car命名的另一个工作表中，并对各列创建筛选器。</p>
+<pre class="r"><code>wb &lt;- createWorkbook()
+addWorksheet(wb, &quot;car&quot;)
+writeData(wb,
+          &quot;car&quot;,
+          mtcars,
+          startCol = 1,
+          startRow = 1,
+          rowNames = T)
+addFilter(wb, #指定Excel表
+          1, #指定具体工作表进行筛选，这里通过数字来指定
+          row = 1, #行数
+          cols = 1:ncol(mtcars)#列数
+          )
+saveWorkbook(wb,
+             file = &#39;mtcars.xlsx&#39;,
+             overwrite = T)</code></pre>
+</div>
+<div id="修改表格格式" class="section level3">
+<h3>2.3.2 修改表格格式</h3>
+<p>对上文的数据表，进行如下表格格式修改：</p>
+<ol style="list-style-type: decimal">
+<li><p>修改表头背景</p></li>
+<li><p>表格线框修改为蓝色，底部边框修改为双线型</p></li>
+<li><p>表格背景修改为斑马色</p></li>
+</ol>
+<pre class="r"><code>style &lt;- createStyle(fgFill = &quot;#008B8B&quot;,
+                         fontColour = &quot;#FFFFFF&quot;)
+addStyle(wb,
+      sheet = &#39;car&#39;,
+      style = style,
+      rows = 1,
+      cols = 1:(ncol(mtcars) + 1),
+      gridExpand = TRUE)
+saveWorkbook(wb,
+      file = &#39;mtcars.xlsx&#39;,
+      overwrite = T)</code></pre>
+<pre class="r"><code>style2 &lt;-  createStyle(
+           borderColour = &quot;#4F81BD&quot;,
+           border=&#39;TopBottomLeftRight&#39;)
+addStyle(wb, 
+         sheet = &#39;car&#39;, 
+         style=style2, 
+         rows = 2:(nrow(mtcars)+1), 
+         cols = 1:(ncol(mtcars)+1), 
+         gridExpand = TRUE)
+saveWorkbook(wb, 
+             file=&#39;mtcars.xlsx&#39;,
+             overwrite = T)</code></pre>
+<p><img src="2022-01-12_164036.png" /></p>
+</div>
+</div>
