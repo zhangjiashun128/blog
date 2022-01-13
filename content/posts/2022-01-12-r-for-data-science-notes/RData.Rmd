@@ -1,0 +1,413 @@
+---
+title: R for Data Science notes chapter1
+author: zhangjiashun
+date: '2022-01-12'
+slug: []
+categories:
+  - R
+tags:
+  - R
+  - Data
+description: ~
+featured_image: ~
+---
+
+[ggplot2语法深入学习](http://vita.had.co.nz/papers/layered-grammar.pdf)
+
+[ggplot2画图例子](https://exts.ggplot2.tidyverse.org/gallery/)
+
+当遇到有冲突的包时，使用`package::function()`.
+
+```{r 导入包}
+library(tidyverse)
+library(patchwork)
+```
+
+```{r}
+mpg
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
++------------+-------------------------------------------------------------------------------------+
+| variable   | describe                                                                            |
++============+=====================================================================================+
+| displ      | engine displacement, in litres                                                      |
++------------+-------------------------------------------------------------------------------------+
+| year       | year of manufacture                                                                 |
++------------+-------------------------------------------------------------------------------------+
+| cyl        | number of cylinders                                                                 |
++------------+-------------------------------------------------------------------------------------+
+| trans      | type of transmission                                                                |
++------------+-------------------------------------------------------------------------------------+
+| drv        | the type of drive train, where f = front-wheel drive, r = rear wheel drive, 4 = 4wd |
++------------+-------------------------------------------------------------------------------------+
+| cty        | city miles per gallon                                                               |
++------------+-------------------------------------------------------------------------------------+
+| hwy        | highway miles per gallon                                                            |
++------------+-------------------------------------------------------------------------------------+
+| fl         | fuel type                                                                           |
++------------+-------------------------------------------------------------------------------------+
+| class      | "type" of car                                                                       |
++------------+-------------------------------------------------------------------------------------+
+
+: mpg数据框中变量说明
+
+```{r}
+nrow(mpg)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = hwy, y = cyl))
+```
+
+## Aesthetic mappings
+
+通过`color`控制点的颜色：
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+
+通过`size`控制点的大小：
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
+```
+
+通过`alpha`控制点的透明度
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
+```
+
+通过`shape`控制点的形状：
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
+```
+
+## Facets
+
+### 通过一个变量分面
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y =hwy)) +
+  facet_wrap(~ class, nrow = 2)
+```
+
+### 通过两个变量分面
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ cyl)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(. ~ cyl)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(cyl ~ .)
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2)
+```
+
+## Geometric objects
+
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+```
+
+```{r}
+p1 <- ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+p2 <- ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, group = drv))
+p3 <- ggplot(data = mpg) +
+  geom_smooth(
+    mapping = aes(x = displ, y = hwy, color = drv),
+    show.legend = FALSE
+  )
+```
+
+```{r}
+p1 + p2 + p3 + plot_layout(nrow = 1)
+```
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+简略版代码：
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_smooth()
+```
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(color = class)) +
+  geom_smooth()
+```
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point(mapping = aes(color = class)) + 
+  geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE #不显示置信区间
+              )
+```
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+```
+
+练习中的图的重现代码：
+
+```{r}
+p11 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_smooth(se = F)
+```
+
+```{r}
+p12 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point() +
+  geom_smooth(mapping = aes(group = drv), se = F)
+```
+
+```{r}
+p13 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) +
+  geom_point() +
+  geom_smooth(se = F)
+```
+
+```{r}
+p14 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(color = drv)) +
+  geom_smooth(se = F)
+```
+
+```{r}
+p15 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(color = drv)) +
+  geom_smooth(se = F, mapping = aes(linetype = drv))
+```
+
+```{r}
+p16 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(color = drv))
+```
+
+```{r}
+p11 + p12 + p13 + p14 + p15 + p16 + plot_layout(nrow = 3)
+```
+## Statistical transformations
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut))
+```
+每个geom都有一个默认的stat,每个stat都有一个默认的geom:
+
+```{r}
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut))
+```
+```{r}
+demo <- tribble(
+  ~cut,         ~freq,
+  "Fair",       1610,
+  "Good",       4906,
+  "Very Good",  12082,
+  "Premium",    13791,
+  "Ideal",      21551
+)
+```
+
+```{r}
+demo 
+```
+
+```{r}
+ggplot(data = demo) +
+  geom_bar(mapping = aes(x = cut, y = freq), stat = "identity")
+```
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = stat(prop), group = 1))
+```
+
+```{r}
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.min = min,
+    fun.max = max,
+    fun = median
+  )
+```
+与上图`stat_summary`相对应的`geom`是`geom_pointrange`，但是`geom_pointrange`中默认的`stat`是`identity`，需要将使用`geom_pointrange(stat = summary)`
+```{r}
+ggplot(data = diamonds) + 
+  geom_pointrange(
+    mapping = aes(x = cut, y = depth),
+    stat = "summary",
+    fun.min = min,
+    fun.max = max,
+    fun = median
+  )
+```
+```{r}
+p21 <- ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = after_stat(prop)))
+p22 <- ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color, y = after_stat(prop)))
+```
+
+```{r}
+p21 + p22 + plot_layout(nrow = 1)
+```
+
+## Position adjustments
+
+```{r}
+p31 <- ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, colour = cut))
+p32 <- ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = cut))
+```
+
+```{r}
+p31 + p32 + plot_layout(nrow = 2)
+```
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity))
+```
+1. `position = "identity"`:
+
+```{r}
+p41 <- ggplot(data = diamonds, mapping = aes(x = cut, fill = clarity)) + 
+  geom_bar(alpha = 1/5, position = "identity")
+p42 <- ggplot(data = diamonds, mapping = aes(x = cut, colour = clarity)) + 
+  geom_bar(fill = NA, position = "identity")
+```
+
+```{r}
+p41 / p42
+```
+
+2. `position = "fill"`:
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
+```
+3. `position = "dodge"`:
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+```
+
+4. 设置`position = "jitter"`来防止点因为进位而重叠：
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+```
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_jitter()
+```
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+geom_count()
+```
+```{r}
+ggplot(data = mpg, aes(x = drv, y = hwy, colour = class)) +
+geom_boxplot()
+```
+## Coordinate Systems
+1. `coord_flip()`调换x轴和y轴的位置.
+
+```{r}
+p51 <- ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot()
+p52 <- ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot() +
+  coord_flip()
+p51 + p52
+```
+2. `coord_quickmap()`可以为地图设置合适的纵横比.
+
+```{r}
+nz <- map_data("nz")
+
+n1 <- ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "black")
+
+n2 <- ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "black") +
+  coord_quickmap()
+n1 + n2
+```
+
+3. `coord_polar()`创建极坐标:
+
+```{r}
+bar <- ggplot(data = diamonds) + 
+  geom_bar(
+    mapping = aes(x = cut, fill = cut), 
+    show.legend = FALSE,
+    width = 1
+  ) + 
+  theme(aspect.ratio = 1) +
+  labs(x = NULL, y = NULL)
+
+b1 <- bar + coord_flip()
+b2 <- bar + coord_polar()
+b1 + b2
+```
+
+
+
