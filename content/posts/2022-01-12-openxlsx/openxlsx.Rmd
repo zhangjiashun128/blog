@@ -149,3 +149,23 @@ saveWorkbook(wb,
              file='mtcars.xlsx',
              overwrite = T)
 ```
+
+### **2.4 其它功能介绍**
+
+除支持修改数据格式、表格格式外，openxlsx包也支持使用者建立条件格式、建立跳转链接、插入图片或公式等。
+
+#### **2.4.1 对excel表格的disp列进行数据条显示**
+
+```{r}
+conditionalFormatting(wb, "car",
+             cols = 4,
+             rows = 1:(nrow(mtcars)+1), 
+             type='databar', 
+             style = c("#008B8B"))
+conditionalFormatting(wb, "car",
+              cols = 5, 
+              rows = 1:(nrow(mtcars)+1),
+              style = c("#008B8B", "white"),
+              rule = c(0, 255),
+              type = "colourScale")
+```
