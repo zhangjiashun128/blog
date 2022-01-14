@@ -1,0 +1,346 @@
+---
+title: R for Data Science Chapter2
+author: zhang jiashun
+date: '2022-01-13'
+slug: []
+categories:
+  - R
+tags:
+  - Data
+  - R
+description: ~
+featured_image: ~
+---
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+```{r}
+flights
+```
+
+## Filter rows with `filter()`
+
+通过给赋值语句加上`()`可以达到同时赋值和打印结果的效果：
+
+```{r}
+(jan1 <- flights %>% 
+    filter(month == 1, day == 1))
+```
+
+由于计算中的精度问题，有时判断是否相等需要使用`near()`而不是`==`:
+
+```{r}
+sqrt(2) ^ 2 == 2
+```
+
+```{r}
+near(sqrt(2) ^ 2, 2)
+```
+
+选取11月份和12月份航班的多种方法：
+
+1.
+
+```{r}
+flights %>% 
+  filter(month == 11 | month == 12)
+```
+
+2.  
+
+```{r}
+flights %>% 
+  filter(month %in% c(11, 12))
+```
+
+判断一个值是否为缺失值需要用`is.na()`
+
+`filter()`only includes rows where the condition is `TRUE`; it excludes both `FALSE` and `NA` values.If you want to preserve missing values, ask for them explicitly:
+
+```{r}
+(df <- tibble(x = c(1, NA, 3)))
+```
+
+```{r}
+df %>% 
+  filter(x > 1)
+```
+
+```{r}
+df %>% 
+  filter(is.na(x) | x > 1)
+```
+
+### Exercises
+
+1.  Find all filghts that
+  1. Had an arrival delay of two or more hours:
+
+```{r}
+flights %>% 
+  filter(arr_delay >=120)
+```
+
+2.  Flew to Houston(IAH or HOU)
+
+```{r}
+flights %>% 
+  filter(dest %in% c("IAH", "HOU") )
+```
+
+3.  Were operated by United(UA),American (AA)or Delta(DL)
+
+```{r}
+flights %>% 
+  filter(carrier %in% c("UA", "AA", "DL") )
+```
+
+4.  Departed in summer(July,August,and September)
+
+```{r}
+flights %>% 
+  filter(month >= 7 & month <=9)
+```
+
+```{r}
+flights %>% 
+  filter(between(month, 7, 9))
+```
+
+## Arrange rows with `arrange()`
+
+Missing values are always sorted at the end (either ascending order or descending order)
+
+The method to sort all missing values to the start while others sorted in ascending order:
+
+```{r}
+df1 <- flights %>% 
+  arrange(desc(is.na(dep_time)), dep_time)
+```
+
+## Select columns with `select()`
+
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| function                                                         | describe                                                                                                         |
++==================================================================+==================================================================================================================+
+| `starts_with("abc")`                                             | matches names that beign with "abc"                                                                              |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| `ends_with("xyz")`                                               | matches names that ends with "xyz"                                                                               |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| `contains("ijk")`                                                | matches names that contain "ijk", the default is to ignore case, you can change that defult by `ignore.case = F` |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| `matches("(.)\\1")`                                              | selects variables that match a regular expression.                                                               |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| This one matches any variables that contain repeated characters. |                                                                                                                  |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| `num_range("x", 1:3)`                                            | matches `x1`,`x2` and `x3`                                                                                       |
++------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+
+: functions can be used within `select()`
+
+`rename()` can be used to rename variables:
+
+```{r}
+flights %>% 
+  rename(tail_num = tailnum) %>% 
+  select(tail_num)
+```
+
+If you have a handful of variable you'd like to move to the start of the data frame,you can use `select()` in conjunction with the `everything()`:
+
+```{r}
+flights %>% 
+  select(time_hour, air_time, everything())
+```
+
+`select()` can be used in conjunction with `any_of()`:
+
+```{r}
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+flights %>% 
+  select(any_of(vars))
+```
+
+## Add new variables with `mutate()`
+
+`mutate()` always adds new colnums at the end of the dataset.
+
+If you only want to keep the new variable, use `tansmute()`:
+
+```{r}
+flights %>% 
+  transmute(gain = dep_delay - arr_delay,
+            hours = air_time / 60,
+            gain_per_hour = gain / hours)
+```
+
+- Cumulative and rolling aggregates:`cumsum()`,`cumprod()`,`cummin()`,`cummax()`,`cummean()`
+
+- Ranking:`min_rank()` gives smallest values the small rank defaultly;use `desc(x)` to give the largest values the smallest ranks:
+
+```{r}
+y <- c(1, 2, 2, NA, 3, 4)
+min_rank(y)
+min_rank(desc(y))
+```
+## Grouped summaries with `summarise()`
+
+```{r}
+delays <- flights %>% 
+  group_by(dest) %>% 
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = T)
+  ) %>% 
+  filter(count > 20, dest != "HNL")
+ggplot(data = delays, mapping = aes(x = dist, y = delay)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
+```
+```{r}
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(mean = mean(dep_delay))
+```
+
+```{r}
+(delays1 <- not_cancelled %>% 
+  group_by(tailnum) %>% 
+  summarise(
+    delay = mean(arr_delay)
+  ))
+```
+
+
+```{r}
+ggplot(data = delays1, mapping = aes(x = delay)) +
+         geom_freqpoly(binwidth = 10)
+```
+
+```{r}
+delays2 <- not_cancelled %>% 
+  group_by(tailnum) %>% 
+  summarise(delay = mean(arr_delay),
+            n = n())
+ggplot(data = delays2, mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)
+```
+```{r}
+delays2 %>% 
+  filter(n > 25) %>% 
+  ggplot(mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)
+```
+```{r}
+batting <- as_tibble(Lahman::Batting)
+batters <- batting %>% 
+  group_by(playerID) %>% 
+  summarise(
+    ba = sum(H, na.rm = T) / sum(AB, na.rm = TRUE),
+    ab = sum(AB, na.rm = TRUE)
+  )
+```
+
+```{r}
+batters %>% 
+  filter(ab > 100) %>% 
+  ggplot(mapping = aes(x = ab, y = ba)) +
+  geom_point(alpha = 1/5) +
+  geom_smooth(se = F)
+```
+
+```{r}
+batters %>% 
+  arrange(desc(ba))
+```
+
+### Useful summary functions
+
+- Measures of location:`mean(x)`,`median(x)`;
+
+- Measures of spread:`sd(x)`,`IQR(x)`,`mad(x)`;
+  - `IQR(x)`:The interquartile range;
+  - `mad(x)`:median absolute deviation.
+- Measures of rank:`min(x)`,`quantile(x,0.25)`,`max(x)`;
+
+  quantiles are a generalisation of the median.`quantile(x,0.25)` will find a value of that is greater than 25% of the values,and less than the remaining 75%.
+
+- Measures of position:`first(x)`,`nth(x,2)`,`last(x)`.
+  These work similarity to `x[1]`,`x[2]`,`x[length(x)]`
+  
+```{r}
+#取出每一天的最大值和最小值
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  mutate(r = min_rank(desc(dep_time))) %>% 
+  filter(r %in% range(r))
+```
+- Counts:`n()`,`sum(!is.na(x))`,To count the number of distinct(unique) values,ues `n_distinct(x)`.
+
+Counts are so useful that dplyr provides a simple helper if all you want is a count:
+
+```{r}
+not_cancelled %>% 
+  count(dest)
+```
+You can optionally provides a weight variable.For example,you could use this to "count"(sum) the total number of miles a plane flew:
+```{r}
+not_cancelled %>% 
+  count(tailnum, wt = distance)
+```
+- Counts and proportions of logical values: `sum(x > 10)`, `mean(y == 0)`. When used with numeric functions, `TRUE` is converted to 1 and `FALSE` to 0. This makes `sum()` and `mean()` very useful: `sum(x)` gives the number of `TRUE`s in x, and `mean(x)` gives the proportion.
+
+```{r}
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(n_early = sum(dep_time < 500),
+            n_prop = mean(dep_time < 500)) %>% 
+  arrange(desc(n_early))
+```
+
+```{r}
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(hour_prop = mean(arr_delay > 60))
+```
+
+### Grouping by multiple variables
+
+When you group by multiple variables,each summary peels off one level of the grouping.That makes it easy to progressively roll up a dataset:
+
+```{r}
+daily <- group_by(flights, year, month, day)
+(per_day <- summarise(daily, flights = n()))
+(per_month <- summarise(per_day, flights = sum(flights)))
+(per_year <- summarise(per_month, flights = sum(flights)))
+```
+
+### Ungrouping
+
+If you need to remove grouping, and return to operations on ungrouped data, use `ungroup()`.
+
+```{r}
+daily %>% 
+  ungroup() %>% 
+  summarise(flights = n())
+```
+
+## Grouped mutates(and filters)
+
+Grouping is most useful in conjunction with `summarise()`, but you can also do convenient operations with `mutate()` and `filter()`:
+- Find the worst members of each group:
+
+```{r}
+flights%>% 
+  group_by(year, month, day) %>%
+  mutate(rank = rank(desc(arr_delay)), maximum = max(arr_delay, na.rm = T)) %>% 
+  select(year, month, day, arr_delay, rank, maximum) %>% 
+  filter(rank(desc(arr_delay)) < 10)
+```
+

@@ -1,0 +1,679 @@
+---
+title: R for Data Science Chapter2
+author: zhang jiashun
+date: '2022-01-13'
+slug: []
+categories:
+  - R
+tags:
+  - Data
+  - R
+description: ~
+featured_image: ~
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<pre class="r"><code>library(nycflights13)
+library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.1     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>flights</code></pre>
+<pre><code>## # A tibble: 336,776 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      517            515         2      830            819
+##  2  2013     1     1      533            529         4      850            830
+##  3  2013     1     1      542            540         2      923            850
+##  4  2013     1     1      544            545        -1     1004           1022
+##  5  2013     1     1      554            600        -6      812            837
+##  6  2013     1     1      554            558        -4      740            728
+##  7  2013     1     1      555            600        -5      913            854
+##  8  2013     1     1      557            600        -3      709            723
+##  9  2013     1     1      557            600        -3      838            846
+## 10  2013     1     1      558            600        -2      753            745
+## # ... with 336,766 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<div id="filter-rows-with-filter" class="section level2">
+<h2>Filter rows with <code>filter()</code></h2>
+<p>通过给赋值语句加上<code>()</code>可以达到同时赋值和打印结果的效果：</p>
+<pre class="r"><code>(jan1 &lt;- flights %&gt;% 
+    filter(month == 1, day == 1))</code></pre>
+<pre><code>## # A tibble: 842 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      517            515         2      830            819
+##  2  2013     1     1      533            529         4      850            830
+##  3  2013     1     1      542            540         2      923            850
+##  4  2013     1     1      544            545        -1     1004           1022
+##  5  2013     1     1      554            600        -6      812            837
+##  6  2013     1     1      554            558        -4      740            728
+##  7  2013     1     1      555            600        -5      913            854
+##  8  2013     1     1      557            600        -3      709            723
+##  9  2013     1     1      557            600        -3      838            846
+## 10  2013     1     1      558            600        -2      753            745
+## # ... with 832 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<p>由于计算中的精度问题，有时判断是否相等需要使用<code>near()</code>而不是<code>==</code>:</p>
+<pre class="r"><code>sqrt(2) ^ 2 == 2</code></pre>
+<pre><code>## [1] FALSE</code></pre>
+<pre class="r"><code>near(sqrt(2) ^ 2, 2)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>选取11月份和12月份航班的多种方法：</p>
+<ol style="list-style-type: decimal">
+<li></li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(month == 11 | month == 12)</code></pre>
+<pre><code>## # A tibble: 55,403 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013    11     1        5           2359         6      352            345
+##  2  2013    11     1       35           2250       105      123           2356
+##  3  2013    11     1      455            500        -5      641            651
+##  4  2013    11     1      539            545        -6      856            827
+##  5  2013    11     1      542            545        -3      831            855
+##  6  2013    11     1      549            600       -11      912            923
+##  7  2013    11     1      550            600       -10      705            659
+##  8  2013    11     1      554            600        -6      659            701
+##  9  2013    11     1      554            600        -6      826            827
+## 10  2013    11     1      554            600        -6      749            751
+## # ... with 55,393 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li></li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(month %in% c(11, 12))</code></pre>
+<pre><code>## # A tibble: 55,403 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013    11     1        5           2359         6      352            345
+##  2  2013    11     1       35           2250       105      123           2356
+##  3  2013    11     1      455            500        -5      641            651
+##  4  2013    11     1      539            545        -6      856            827
+##  5  2013    11     1      542            545        -3      831            855
+##  6  2013    11     1      549            600       -11      912            923
+##  7  2013    11     1      550            600       -10      705            659
+##  8  2013    11     1      554            600        -6      659            701
+##  9  2013    11     1      554            600        -6      826            827
+## 10  2013    11     1      554            600        -6      749            751
+## # ... with 55,393 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<p>判断一个值是否为缺失值需要用<code>is.na()</code></p>
+<p><code>filter()</code>only includes rows where the condition is <code>TRUE</code>; it excludes both <code>FALSE</code> and <code>NA</code> values.If you want to preserve missing values, ask for them explicitly:</p>
+<pre class="r"><code>(df &lt;- tibble(x = c(1, NA, 3)))</code></pre>
+<pre><code>## # A tibble: 3 x 1
+##       x
+##   &lt;dbl&gt;
+## 1     1
+## 2    NA
+## 3     3</code></pre>
+<pre class="r"><code>df %&gt;% 
+  filter(x &gt; 1)</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##       x
+##   &lt;dbl&gt;
+## 1     3</code></pre>
+<pre class="r"><code>df %&gt;% 
+  filter(is.na(x) | x &gt; 1)</code></pre>
+<pre><code>## # A tibble: 2 x 1
+##       x
+##   &lt;dbl&gt;
+## 1    NA
+## 2     3</code></pre>
+<div id="exercises" class="section level3">
+<h3>Exercises</h3>
+<ol style="list-style-type: decimal">
+<li>Find all filghts that</li>
+<li>Had an arrival delay of two or more hours:</li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(arr_delay &gt;=120)</code></pre>
+<pre><code>## # A tibble: 10,200 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      811            630       101     1047            830
+##  2  2013     1     1      848           1835       853     1001           1950
+##  3  2013     1     1      957            733       144     1056            853
+##  4  2013     1     1     1114            900       134     1447           1222
+##  5  2013     1     1     1505           1310       115     1638           1431
+##  6  2013     1     1     1525           1340       105     1831           1626
+##  7  2013     1     1     1549           1445        64     1912           1656
+##  8  2013     1     1     1558           1359       119     1718           1515
+##  9  2013     1     1     1732           1630        62     2028           1825
+## 10  2013     1     1     1803           1620       103     2008           1750
+## # ... with 10,190 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Flew to Houston(IAH or HOU)</li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(dest %in% c(&quot;IAH&quot;, &quot;HOU&quot;) )</code></pre>
+<pre><code>## # A tibble: 9,313 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      517            515         2      830            819
+##  2  2013     1     1      533            529         4      850            830
+##  3  2013     1     1      623            627        -4      933            932
+##  4  2013     1     1      728            732        -4     1041           1038
+##  5  2013     1     1      739            739         0     1104           1038
+##  6  2013     1     1      908            908         0     1228           1219
+##  7  2013     1     1     1028           1026         2     1350           1339
+##  8  2013     1     1     1044           1045        -1     1352           1351
+##  9  2013     1     1     1114            900       134     1447           1222
+## 10  2013     1     1     1205           1200         5     1503           1505
+## # ... with 9,303 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Were operated by United(UA),American (AA)or Delta(DL)</li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(carrier %in% c(&quot;UA&quot;, &quot;AA&quot;, &quot;DL&quot;) )</code></pre>
+<pre><code>## # A tibble: 139,504 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      517            515         2      830            819
+##  2  2013     1     1      533            529         4      850            830
+##  3  2013     1     1      542            540         2      923            850
+##  4  2013     1     1      554            600        -6      812            837
+##  5  2013     1     1      554            558        -4      740            728
+##  6  2013     1     1      558            600        -2      753            745
+##  7  2013     1     1      558            600        -2      924            917
+##  8  2013     1     1      558            600        -2      923            937
+##  9  2013     1     1      559            600        -1      941            910
+## 10  2013     1     1      559            600        -1      854            902
+## # ... with 139,494 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Departed in summer(July,August,and September)</li>
+</ol>
+<pre class="r"><code>flights %&gt;% 
+  filter(month &gt;= 7 &amp; month &lt;=9)</code></pre>
+<pre><code>## # A tibble: 86,326 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     7     1        1           2029       212      236           2359
+##  2  2013     7     1        2           2359         3      344            344
+##  3  2013     7     1       29           2245       104      151              1
+##  4  2013     7     1       43           2130       193      322             14
+##  5  2013     7     1       44           2150       174      300            100
+##  6  2013     7     1       46           2051       235      304           2358
+##  7  2013     7     1       48           2001       287      308           2305
+##  8  2013     7     1       58           2155       183      335             43
+##  9  2013     7     1      100           2146       194      327             30
+## 10  2013     7     1      100           2245       135      337            135
+## # ... with 86,316 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+<pre class="r"><code>flights %&gt;% 
+  filter(between(month, 7, 9))</code></pre>
+<pre><code>## # A tibble: 86,326 x 19
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     7     1        1           2029       212      236           2359
+##  2  2013     7     1        2           2359         3      344            344
+##  3  2013     7     1       29           2245       104      151              1
+##  4  2013     7     1       43           2130       193      322             14
+##  5  2013     7     1       44           2150       174      300            100
+##  6  2013     7     1       46           2051       235      304           2358
+##  7  2013     7     1       48           2001       287      308           2305
+##  8  2013     7     1       58           2155       183      335             43
+##  9  2013     7     1      100           2146       194      327             30
+## 10  2013     7     1      100           2245       135      337            135
+## # ... with 86,316 more rows, and 11 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;</code></pre>
+</div>
+</div>
+<div id="arrange-rows-with-arrange" class="section level2">
+<h2>Arrange rows with <code>arrange()</code></h2>
+<p>Missing values are always sorted at the end (either ascending order or descending order)</p>
+<p>The method to sort all missing values to the start while others sorted in ascending order:</p>
+<pre class="r"><code>df1 &lt;- flights %&gt;% 
+  arrange(desc(is.na(dep_time)), dep_time)</code></pre>
+</div>
+<div id="select-columns-with-select" class="section level2">
+<h2>Select columns with <code>select()</code></h2>
+<table>
+<caption>functions can be used within <code>select()</code></caption>
+<colgroup>
+<col width="36%" />
+<col width="63%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>function</th>
+<th>describe</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>starts_with("abc")</code></td>
+<td>matches names that beign with “abc”</td>
+</tr>
+<tr class="even">
+<td><code>ends_with("xyz")</code></td>
+<td>matches names that ends with “xyz”</td>
+</tr>
+<tr class="odd">
+<td><code>contains("ijk")</code></td>
+<td>matches names that contain “ijk”, the default is to ignore case, you can change that defult by <code>ignore.case = F</code></td>
+</tr>
+<tr class="even">
+<td><code>matches("(.)\\1")</code></td>
+<td>selects variables that match a regular expression.</td>
+</tr>
+<tr class="odd">
+<td>This one matches any variables that contain repeated characters.</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>num_range("x", 1:3)</code></td>
+<td>matches <code>x1</code>,<code>x2</code> and <code>x3</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>rename()</code> can be used to rename variables:</p>
+<pre class="r"><code>flights %&gt;% 
+  rename(tail_num = tailnum) %&gt;% 
+  select(tail_num)</code></pre>
+<pre><code>## # A tibble: 336,776 x 1
+##    tail_num
+##    &lt;chr&gt;   
+##  1 N14228  
+##  2 N24211  
+##  3 N619AA  
+##  4 N804JB  
+##  5 N668DN  
+##  6 N39463  
+##  7 N516JB  
+##  8 N829AS  
+##  9 N593JB  
+## 10 N3ALAA  
+## # ... with 336,766 more rows</code></pre>
+<p>If you have a handful of variable you’d like to move to the start of the data frame,you can use <code>select()</code> in conjunction with the <code>everything()</code>:</p>
+<pre class="r"><code>flights %&gt;% 
+  select(time_hour, air_time, everything())</code></pre>
+<pre><code>## # A tibble: 336,776 x 19
+##    time_hour           air_time  year month   day dep_time sched_dep_time
+##    &lt;dttm&gt;                 &lt;dbl&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;
+##  1 2013-01-01 05:00:00      227  2013     1     1      517            515
+##  2 2013-01-01 05:00:00      227  2013     1     1      533            529
+##  3 2013-01-01 05:00:00      160  2013     1     1      542            540
+##  4 2013-01-01 05:00:00      183  2013     1     1      544            545
+##  5 2013-01-01 06:00:00      116  2013     1     1      554            600
+##  6 2013-01-01 05:00:00      150  2013     1     1      554            558
+##  7 2013-01-01 06:00:00      158  2013     1     1      555            600
+##  8 2013-01-01 06:00:00       53  2013     1     1      557            600
+##  9 2013-01-01 06:00:00      140  2013     1     1      557            600
+## 10 2013-01-01 06:00:00      138  2013     1     1      558            600
+## # ... with 336,766 more rows, and 12 more variables: dep_delay &lt;dbl&gt;,
+## #   arr_time &lt;int&gt;, sched_arr_time &lt;int&gt;, arr_delay &lt;dbl&gt;, carrier &lt;chr&gt;,
+## #   flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;, distance &lt;dbl&gt;,
+## #   hour &lt;dbl&gt;, minute &lt;dbl&gt;</code></pre>
+<p><code>select()</code> can be used in conjunction with <code>any_of()</code>:</p>
+<pre class="r"><code>vars &lt;- c(&quot;year&quot;, &quot;month&quot;, &quot;day&quot;, &quot;dep_delay&quot;, &quot;arr_delay&quot;)
+flights %&gt;% 
+  select(any_of(vars))</code></pre>
+<pre><code>## # A tibble: 336,776 x 5
+##     year month   day dep_delay arr_delay
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1  2013     1     1         2        11
+##  2  2013     1     1         4        20
+##  3  2013     1     1         2        33
+##  4  2013     1     1        -1       -18
+##  5  2013     1     1        -6       -25
+##  6  2013     1     1        -4        12
+##  7  2013     1     1        -5        19
+##  8  2013     1     1        -3       -14
+##  9  2013     1     1        -3        -8
+## 10  2013     1     1        -2         8
+## # ... with 336,766 more rows</code></pre>
+</div>
+<div id="add-new-variables-with-mutate" class="section level2">
+<h2>Add new variables with <code>mutate()</code></h2>
+<p><code>mutate()</code> always adds new colnums at the end of the dataset.</p>
+<p>If you only want to keep the new variable, use <code>tansmute()</code>:</p>
+<pre class="r"><code>flights %&gt;% 
+  transmute(gain = dep_delay - arr_delay,
+            hours = air_time / 60,
+            gain_per_hour = gain / hours)</code></pre>
+<pre><code>## # A tibble: 336,776 x 3
+##     gain hours gain_per_hour
+##    &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;
+##  1    -9 3.78          -2.38
+##  2   -16 3.78          -4.23
+##  3   -31 2.67         -11.6 
+##  4    17 3.05           5.57
+##  5    19 1.93           9.83
+##  6   -16 2.5           -6.4 
+##  7   -24 2.63          -9.11
+##  8    11 0.883         12.5 
+##  9     5 2.33           2.14
+## 10   -10 2.3           -4.35
+## # ... with 336,766 more rows</code></pre>
+<ul>
+<li><p>Cumulative and rolling aggregates:<code>cumsum()</code>,<code>cumprod()</code>,<code>cummin()</code>,<code>cummax()</code>,<code>cummean()</code></p></li>
+<li><p>Ranking:<code>min_rank()</code> gives smallest values the small rank defaultly;use <code>desc(x)</code> to give the largest values the smallest ranks:</p></li>
+</ul>
+<pre class="r"><code>y &lt;- c(1, 2, 2, NA, 3, 4)
+min_rank(y)</code></pre>
+<pre><code>## [1]  1  2  2 NA  4  5</code></pre>
+<pre class="r"><code>min_rank(desc(y))</code></pre>
+<pre><code>## [1]  5  3  3 NA  2  1</code></pre>
+</div>
+<div id="grouped-summaries-with-summarise" class="section level2">
+<h2>Grouped summaries with <code>summarise()</code></h2>
+<pre class="r"><code>delays &lt;- flights %&gt;% 
+  group_by(dest) %&gt;% 
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = T)
+  ) %&gt;% 
+  filter(count &gt; 20, dest != &quot;HNL&quot;)
+ggplot(data = delays, mapping = aes(x = dist, y = delay)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)</code></pre>
+<pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
+<p><img src="/posts/2022-01-13-r-for-data-science-chapter2/RData1_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code>not_cancelled &lt;- flights %&gt;% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+not_cancelled %&gt;% 
+  group_by(year, month, day) %&gt;% 
+  summarise(mean = mean(dep_delay))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;year&#39;, &#39;month&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 365 x 4
+## # Groups:   year, month [12]
+##     year month   day  mean
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;
+##  1  2013     1     1 11.4 
+##  2  2013     1     2 13.7 
+##  3  2013     1     3 10.9 
+##  4  2013     1     4  8.97
+##  5  2013     1     5  5.73
+##  6  2013     1     6  7.15
+##  7  2013     1     7  5.42
+##  8  2013     1     8  2.56
+##  9  2013     1     9  2.30
+## 10  2013     1    10  2.84
+## # ... with 355 more rows</code></pre>
+<pre class="r"><code>(delays1 &lt;- not_cancelled %&gt;% 
+  group_by(tailnum) %&gt;% 
+  summarise(
+    delay = mean(arr_delay)
+  ))</code></pre>
+<pre><code>## # A tibble: 4,037 x 2
+##    tailnum  delay
+##    &lt;chr&gt;    &lt;dbl&gt;
+##  1 D942DN  31.5  
+##  2 N0EGMQ   9.98 
+##  3 N10156  12.7  
+##  4 N102UW   2.94 
+##  5 N103US  -6.93 
+##  6 N104UW   1.80 
+##  7 N10575  20.7  
+##  8 N105UW  -0.267
+##  9 N107US  -5.73 
+## 10 N108UW  -1.25 
+## # ... with 4,027 more rows</code></pre>
+<pre class="r"><code>ggplot(data = delays1, mapping = aes(x = delay)) +
+         geom_freqpoly(binwidth = 10)</code></pre>
+<p><img src="/posts/2022-01-13-r-for-data-science-chapter2/RData1_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<pre class="r"><code>delays2 &lt;- not_cancelled %&gt;% 
+  group_by(tailnum) %&gt;% 
+  summarise(delay = mean(arr_delay),
+            n = n())
+ggplot(data = delays2, mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)</code></pre>
+<p><img src="/posts/2022-01-13-r-for-data-science-chapter2/RData1_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<pre class="r"><code>delays2 %&gt;% 
+  filter(n &gt; 25) %&gt;% 
+  ggplot(mapping = aes(x = n, y = delay)) +
+  geom_point(alpha = 1/10)</code></pre>
+<p><img src="/posts/2022-01-13-r-for-data-science-chapter2/RData1_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<pre class="r"><code>batting &lt;- as_tibble(Lahman::Batting)
+batters &lt;- batting %&gt;% 
+  group_by(playerID) %&gt;% 
+  summarise(
+    ba = sum(H, na.rm = T) / sum(AB, na.rm = TRUE),
+    ab = sum(AB, na.rm = TRUE)
+  )</code></pre>
+<pre class="r"><code>batters %&gt;% 
+  filter(ab &gt; 100) %&gt;% 
+  ggplot(mapping = aes(x = ab, y = ba)) +
+  geom_point(alpha = 1/5) +
+  geom_smooth(se = F)</code></pre>
+<pre><code>## `geom_smooth()` using method = &#39;gam&#39; and formula &#39;y ~ s(x, bs = &quot;cs&quot;)&#39;</code></pre>
+<p><img src="/posts/2022-01-13-r-for-data-science-chapter2/RData1_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<pre class="r"><code>batters %&gt;% 
+  arrange(desc(ba))</code></pre>
+<pre><code>## # A tibble: 19,898 x 3
+##    playerID     ba    ab
+##    &lt;chr&gt;     &lt;dbl&gt; &lt;int&gt;
+##  1 abramge01     1     1
+##  2 alanirj01     1     1
+##  3 alberan01     1     1
+##  4 banisje01     1     1
+##  5 bartocl01     1     1
+##  6 bassdo01      1     1
+##  7 birasst01     1     2
+##  8 bruneju01     1     1
+##  9 burnscb01     1     1
+## 10 cammaer01     1     1
+## # ... with 19,888 more rows</code></pre>
+<div id="useful-summary-functions" class="section level3">
+<h3>Useful summary functions</h3>
+<ul>
+<li><p>Measures of location:<code>mean(x)</code>,<code>median(x)</code>;</p></li>
+<li><p>Measures of spread:<code>sd(x)</code>,<code>IQR(x)</code>,<code>mad(x)</code>;</p>
+<ul>
+<li><code>IQR(x)</code>:The interquartile range;</li>
+<li><code>mad(x)</code>:median absolute deviation.</li>
+</ul></li>
+<li><p>Measures of rank:<code>min(x)</code>,<code>quantile(x,0.25)</code>,<code>max(x)</code>;</p>
+<p>quantiles are a generalisation of the median.<code>quantile(x,0.25)</code> will find a value of that is greater than 25% of the values,and less than the remaining 75%.</p></li>
+<li><p>Measures of position:<code>first(x)</code>,<code>nth(x,2)</code>,<code>last(x)</code>.
+These work similarity to <code>x[1]</code>,<code>x[2]</code>,<code>x[length(x)]</code></p></li>
+</ul>
+<pre class="r"><code>#取出每一天的最大值和最小值
+not_cancelled %&gt;% 
+  group_by(year, month, day) %&gt;% 
+  mutate(r = min_rank(desc(dep_time))) %&gt;% 
+  filter(r %in% range(r))</code></pre>
+<pre><code>## # A tibble: 770 x 20
+## # Groups:   year, month, day [365]
+##     year month   day dep_time sched_dep_time dep_delay arr_time sched_arr_time
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt;          &lt;int&gt;     &lt;dbl&gt;    &lt;int&gt;          &lt;int&gt;
+##  1  2013     1     1      517            515         2      830            819
+##  2  2013     1     1     2356           2359        -3      425            437
+##  3  2013     1     2       42           2359        43      518            442
+##  4  2013     1     2     2354           2359        -5      413            437
+##  5  2013     1     3       32           2359        33      504            442
+##  6  2013     1     3     2349           2359       -10      434            445
+##  7  2013     1     4       25           2359        26      505            442
+##  8  2013     1     4     2358           2359        -1      429            437
+##  9  2013     1     4     2358           2359        -1      436            445
+## 10  2013     1     5       14           2359        15      503            445
+## # ... with 760 more rows, and 12 more variables: arr_delay &lt;dbl&gt;,
+## #   carrier &lt;chr&gt;, flight &lt;int&gt;, tailnum &lt;chr&gt;, origin &lt;chr&gt;, dest &lt;chr&gt;,
+## #   air_time &lt;dbl&gt;, distance &lt;dbl&gt;, hour &lt;dbl&gt;, minute &lt;dbl&gt;, time_hour &lt;dttm&gt;,
+## #   r &lt;int&gt;</code></pre>
+<ul>
+<li>Counts:<code>n()</code>,<code>sum(!is.na(x))</code>,To count the number of distinct(unique) values,ues <code>n_distinct(x)</code>.</li>
+</ul>
+<p>Counts are so useful that dplyr provides a simple helper if all you want is a count:</p>
+<pre class="r"><code>not_cancelled %&gt;% 
+  count(dest)</code></pre>
+<pre><code>## # A tibble: 104 x 2
+##    dest      n
+##    &lt;chr&gt; &lt;int&gt;
+##  1 ABQ     254
+##  2 ACK     264
+##  3 ALB     418
+##  4 ANC       8
+##  5 ATL   16837
+##  6 AUS    2411
+##  7 AVL     261
+##  8 BDL     412
+##  9 BGR     358
+## 10 BHM     269
+## # ... with 94 more rows</code></pre>
+<p>You can optionally provides a weight variable.For example,you could use this to “count”(sum) the total number of miles a plane flew:</p>
+<pre class="r"><code>not_cancelled %&gt;% 
+  count(tailnum, wt = distance)</code></pre>
+<pre><code>## # A tibble: 4,037 x 2
+##    tailnum      n
+##    &lt;chr&gt;    &lt;dbl&gt;
+##  1 D942DN    3418
+##  2 N0EGMQ  239143
+##  3 N10156  109664
+##  4 N102UW   25722
+##  5 N103US   24619
+##  6 N104UW   24616
+##  7 N10575  139903
+##  8 N105UW   23618
+##  9 N107US   21677
+## 10 N108UW   32070
+## # ... with 4,027 more rows</code></pre>
+<ul>
+<li>Counts and proportions of logical values: <code>sum(x &gt; 10)</code>, <code>mean(y == 0)</code>. When used with numeric functions, <code>TRUE</code> is converted to 1 and <code>FALSE</code> to 0. This makes <code>sum()</code> and <code>mean()</code> very useful: <code>sum(x)</code> gives the number of <code>TRUE</code>s in x, and <code>mean(x)</code> gives the proportion.</li>
+</ul>
+<pre class="r"><code>not_cancelled %&gt;% 
+  group_by(year, month, day) %&gt;% 
+  summarise(n_early = sum(dep_time &lt; 500),
+            n_prop = mean(dep_time &lt; 500)) %&gt;% 
+  arrange(desc(n_early))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;year&#39;, &#39;month&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 365 x 5
+## # Groups:   year, month [12]
+##     year month   day n_early n_prop
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;int&gt;  &lt;dbl&gt;
+##  1  2013     6    28      32 0.0370
+##  2  2013     4    10      30 0.0348
+##  3  2013     7    28      30 0.0350
+##  4  2013     3    18      29 0.0314
+##  5  2013     7     7      29 0.0330
+##  6  2013     7    10      27 0.0319
+##  7  2013     6    27      25 0.0282
+##  8  2013     6    13      24 0.0272
+##  9  2013     3     8      22 0.0276
+## 10  2013     7    22      22 0.0256
+## # ... with 355 more rows</code></pre>
+<pre class="r"><code>not_cancelled %&gt;% 
+  group_by(year, month, day) %&gt;% 
+  summarise(hour_prop = mean(arr_delay &gt; 60))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;year&#39;, &#39;month&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 365 x 4
+## # Groups:   year, month [12]
+##     year month   day hour_prop
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;
+##  1  2013     1     1    0.0722
+##  2  2013     1     2    0.0851
+##  3  2013     1     3    0.0567
+##  4  2013     1     4    0.0396
+##  5  2013     1     5    0.0349
+##  6  2013     1     6    0.0470
+##  7  2013     1     7    0.0333
+##  8  2013     1     8    0.0213
+##  9  2013     1     9    0.0202
+## 10  2013     1    10    0.0183
+## # ... with 355 more rows</code></pre>
+</div>
+<div id="grouping-by-multiple-variables" class="section level3">
+<h3>Grouping by multiple variables</h3>
+<p>When you group by multiple variables,each summary peels off one level of the grouping.That makes it easy to progressively roll up a dataset:</p>
+<pre class="r"><code>daily &lt;- group_by(flights, year, month, day)
+(per_day &lt;- summarise(daily, flights = n()))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;year&#39;, &#39;month&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 365 x 4
+## # Groups:   year, month [12]
+##     year month   day flights
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;int&gt;
+##  1  2013     1     1     842
+##  2  2013     1     2     943
+##  3  2013     1     3     914
+##  4  2013     1     4     915
+##  5  2013     1     5     720
+##  6  2013     1     6     832
+##  7  2013     1     7     933
+##  8  2013     1     8     899
+##  9  2013     1     9     902
+## 10  2013     1    10     932
+## # ... with 355 more rows</code></pre>
+<pre class="r"><code>(per_month &lt;- summarise(per_day, flights = sum(flights)))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;year&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 12 x 3
+## # Groups:   year [1]
+##     year month flights
+##    &lt;int&gt; &lt;int&gt;   &lt;int&gt;
+##  1  2013     1   27004
+##  2  2013     2   24951
+##  3  2013     3   28834
+##  4  2013     4   28330
+##  5  2013     5   28796
+##  6  2013     6   28243
+##  7  2013     7   29425
+##  8  2013     8   29327
+##  9  2013     9   27574
+## 10  2013    10   28889
+## 11  2013    11   27268
+## 12  2013    12   28135</code></pre>
+<pre class="r"><code>(per_year &lt;- summarise(per_month, flights = sum(flights)))</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##    year flights
+##   &lt;int&gt;   &lt;int&gt;
+## 1  2013  336776</code></pre>
+</div>
+<div id="ungrouping" class="section level3">
+<h3>Ungrouping</h3>
+<p>If you need to remove grouping, and return to operations on ungrouped data, use <code>ungroup()</code>.</p>
+<pre class="r"><code>daily %&gt;% 
+  ungroup() %&gt;% 
+  summarise(flights = n())</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   flights
+##     &lt;int&gt;
+## 1  336776</code></pre>
+</div>
+</div>
+<div id="grouped-mutatesand-filters" class="section level2">
+<h2>Grouped mutates(and filters)</h2>
+<p>Grouping is most useful in conjunction with <code>summarise()</code>, but you can also do convenient operations with <code>mutate()</code> and <code>filter()</code>:
+- Find the worst members of each group:</p>
+<pre class="r"><code>flights%&gt;% 
+  group_by(year, month, day) %&gt;%
+  mutate(rank = rank(desc(arr_delay)), maximum = max(arr_delay, na.rm = T)) %&gt;% 
+  select(year, month, day, arr_delay, rank, maximum) %&gt;% 
+  filter(rank(desc(arr_delay)) &lt; 10)</code></pre>
+<pre><code>## # A tibble: 3,306 x 6
+## # Groups:   year, month, day [365]
+##     year month   day arr_delay  rank maximum
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;
+##  1  2013     1     1       851     1     851
+##  2  2013     1     1       338     3     851
+##  3  2013     1     1       263     4     851
+##  4  2013     1     1       174     9     851
+##  5  2013     1     1       222     7     851
+##  6  2013     1     1       250     5     851
+##  7  2013     1     1       246     6     851
+##  8  2013     1     1       191     8     851
+##  9  2013     1     1       456     2     851
+## 10  2013     1     2       207     6     368
+## # ... with 3,296 more rows</code></pre>
+</div>
