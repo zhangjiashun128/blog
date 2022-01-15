@@ -1,0 +1,296 @@
+---
+title: R for Data Science:Exploratory Data Analysis
+author: Zhang Jiashun
+date: '2022-01-14'
+slug: []
+categories:
+  - R
+tags:
+  - R
+  - Data
+description: ~
+featured_image: ~
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>EDA is an interative cycle</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --</code></pre>
+<pre><code>## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.1     v forcats 0.5.1</code></pre>
+<pre><code>## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(patchwork)
+library(modelr)</code></pre>
+<div id="questions" class="section level2">
+<h2>Questions</h2>
+<p>You can loosely word these questions as:
+1. What type of variation occurs within my variables?
+2. What type of covariation occurs between my variale?</p>
+</div>
+<div id="variation" class="section level2">
+<h2>Variation</h2>
+<ul>
+<li>categorical</li>
+</ul>
+<pre class="r"><code>ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-2-1.png" width="672" />
+You can compute these values manually with <code>dplyr::count()</code>:</p>
+<pre class="r"><code>diamonds %&gt;% 
+  count(cut)</code></pre>
+<pre><code>## # A tibble: 5 x 2
+##   cut           n
+##   &lt;ord&gt;     &lt;int&gt;
+## 1 Fair       1610
+## 2 Good       4906
+## 3 Very Good 12082
+## 4 Premium   13791
+## 5 Ideal     21551</code></pre>
+<ul>
+<li>continuous</li>
+</ul>
+<pre class="r"><code>ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat), binwidth = 0.5)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-4-1.png" width="672" />
+You can compute this by hand by combining <code>dplyr::count()</code> and <code>ggplot2::cut_width()</code>:</p>
+<pre class="r"><code>diamonds %&gt;% 
+  count(cut_width(carat, 0.5))</code></pre>
+<pre><code>## # A tibble: 11 x 2
+##    `cut_width(carat, 0.5)`     n
+##    &lt;fct&gt;                   &lt;int&gt;
+##  1 [-0.25,0.25]              785
+##  2 (0.25,0.75]             29498
+##  3 (0.75,1.25]             15977
+##  4 (1.25,1.75]              5313
+##  5 (1.75,2.25]              2002
+##  6 (2.25,2.75]               322
+##  7 (2.75,3.25]                32
+##  8 (3.25,3.75]                 5
+##  9 (3.75,4.25]                 4
+## 10 (4.25,4.75]                 1
+## 11 (4.75,5.25]                 1</code></pre>
+<p>You can set the width of the intervals in a histogram with the <code>binwidth</code> argument:</p>
+<pre class="r"><code>smaller &lt;- diamonds %&gt;% 
+  filter(carat &lt; 3)
+ggplot(data = smaller, mapping = aes(x = carat)) +
+  geom_histogram(binwidth = 0.1)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+If you wish to overlay multiple histograms in the same plot, using <code>geom_freqpoly()</code> instead of <code>geom_histogram()</code> is better:</p>
+<pre class="r"><code>ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
+  geom_freqpoly(binwidth = 0.1)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+### Typical values</p>
+<pre class="r"><code>ggplot(data = smaller, mapping = aes(x = carat)) +
+  geom_histogram(binwidth = 0.01)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(data = faithful, mapping = aes(x = eruptions)) +
+  geom_histogram(binwidth = 0.25)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<div id="unusual-values" class="section level3">
+<h3>Unusual values</h3>
+<pre class="r"><code>ggplot(diamonds) +
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>To make it easy to see the unusual values, we need to zoom to small values of the y-axis with <code>coord_cartesian()</code>:</p>
+<pre class="r"><code>ggplot(diamonds) +
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5) +
+  coord_cartesian(ylim = c(0, 50))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>(<code>coord_cartesian()</code> also has an <code>xlim()</code> argument for when you need to zoom into the x-axis. ggplot2 also has <code>xlim()</code> and <code>ylim()</code> functions that work slightly differently: they throw away the data outside the limits.)</p>
+<pre class="r"><code>unusual &lt;- diamonds %&gt;% 
+  filter(y &lt; 3 | y &gt; 20) %&gt;% 
+  select(price, x, y, z) %&gt;% 
+  arrange(y)
+unusual</code></pre>
+<pre><code>## # A tibble: 9 x 4
+##   price     x     y     z
+##   &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1  5139  0      0    0   
+## 2  6381  0      0    0   
+## 3 12800  0      0    0   
+## 4 15686  0      0    0   
+## 5 18034  0      0    0   
+## 6  2130  0      0    0   
+## 7  2130  0      0    0   
+## 8  2075  5.15  31.8  5.12
+## 9 12210  8.09  58.9  8.06</code></pre>
+</div>
+</div>
+<div id="missing-values" class="section level2">
+<h2>Missing values</h2>
+<p>If you’ve encountered unusual values in your dataset, and simply want to move on to the rest of your analysis, you have two options.</p>
+<ol style="list-style-type: decimal">
+<li>Drop the entire row with the strange values:</li>
+</ol>
+<pre class="r"><code>diamonds2 &lt;- diamonds %&gt;% 
+  filter(between(y , 3, 20))</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Instead, I recommend replacing the unusual values with missing values.The easiest way to do this is to use <code>mutate()</code> to replace the variable with a modified copy. You can use the <code>ifelse()</code> function to replace unusual values with <code>NA</code>:</li>
+</ol>
+<pre class="r"><code>diamonds3 &lt;- diamonds %&gt;% 
+  mutate(y = ifelse(y &lt; 3 | y &gt; 20, NA, y))
+diamonds3</code></pre>
+<pre><code>## # A tibble: 53,940 x 10
+##    carat cut       color clarity depth table price     x     y     z
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;ord&gt; &lt;ord&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1  0.23 Ideal     E     SI2      61.5    55   326  3.95  3.98  2.43
+##  2  0.21 Premium   E     SI1      59.8    61   326  3.89  3.84  2.31
+##  3  0.23 Good      E     VS1      56.9    65   327  4.05  4.07  2.31
+##  4  0.29 Premium   I     VS2      62.4    58   334  4.2   4.23  2.63
+##  5  0.31 Good      J     SI2      63.3    58   335  4.34  4.35  2.75
+##  6  0.24 Very Good J     VVS2     62.8    57   336  3.94  3.96  2.48
+##  7  0.24 Very Good I     VVS1     62.3    57   336  3.95  3.98  2.47
+##  8  0.26 Very Good H     SI1      61.9    55   337  4.07  4.11  2.53
+##  9  0.22 Fair      E     VS2      65.1    61   337  3.87  3.78  2.49
+## 10  0.23 Very Good H     VS1      59.4    61   338  4     4.05  2.39
+## # ... with 53,930 more rows</code></pre>
+<p><code>ifelse()</code> has three arguments. The first argument test should be a logical vector. The result will contain the value of the second argument, yes, when test is TRUE, and the value of the third argument, no, when it is false. Alternatively to ifelse, use dplyr::case_when(). case_when() is particularly useful inside mutate when you want to create a new variable that relies on a complex combination of existing variables.</p>
+<p>ggplot2 doesn’t include missing values in the plot, but it does warn that they’ve been removed:</p>
+<pre class="r"><code>ggplot(data = diamonds3, mapping = aes(x = x, y = y)) +
+  geom_point()</code></pre>
+<pre><code>## Warning: Removed 9 rows containing missing values (geom_point).</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-15-1.png" width="672" />
+To suppress that warning, set <code>na.rm = TRUE</code>:</p>
+<pre class="r"><code>ggplot(data = diamonds2, mapping = aes(x = x, y = y)) + 
+  geom_point(na.rm = TRUE)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<p>Other times you want to understand what makes observations with missing values different to observations with recorded values. For example, in <code>nycflights13::flights</code>, missing values in the <code>dep_time</code> variable indicate that the flight was cancelled. So you might want to compare the scheduled departure times for cancelled and non-cancelled times. You can do this by making a new variable with <code>is.na()</code>.</p>
+<pre class="r"><code>nycflights13::flights %&gt;% 
+  mutate(
+    cancelled = is.na(dep_time),
+    sched_hour = sched_dep_time %/% 100,
+    sched_min = sched_dep_time %% 100,
+    sched_dep_time = sched_hour + sched_min / 60
+  ) %&gt;% 
+  ggplot(mapping = aes(sched_dep_time)) +
+  geom_freqpoly(mapping = aes(colour = cancelled), binwidth = 1/4)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<ul>
+<li><p>In the <code>geom_histogram()</code> function,missing values are removed when the number of observations in each bin are calculated. See the warning
+message: Removed 9 rows containing non-finite values (stat_bin)</p></li>
+<li><p>In the <code>geom_bar()</code> function, NA is treated as another category. The x aesthetic in <code>geom_bar()</code>requires a
+discrete (categorical) variable, and missing values act like another category.</p></li>
+</ul>
+</div>
+<div id="covariation" class="section level2">
+<h2>Covariation</h2>
+<p>The best way to spot covariation is to visualise the relationship between two or more variables. How you do that should again depend on the type of variables involved.</p>
+<div id="a-categorical-and-continuous-variable" class="section level3">
+<h3>A categorical and continuous variable</h3>
+<pre class="r"><code>ggplot(data = diamonds, mapping = aes(x = price)) +
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(diamonds) +
+  geom_bar(mapping = aes(x = cut))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p>To make the comparison easier we need to swap what is displayed on the y-axis. Instead of displaying count, we’ll display <strong>density</strong>, which is the count standardised so that the area under each frequency polygon is one.</p>
+<pre class="r"><code>ggplot(data = diamonds, mapping = aes(x = price, y = ..density..)) +
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<p>Another alternative to display the distribution of a continuous variable broken down by a categorical variable is the boxplot.</p>
+<p>A <strong>boxplot</strong> is a type of visual shorthand for a distribution of values that is popular among statisticians. Each boxplot consists of:
+- A box that stretches from the 25th percentile of the distribution to the 75th percentile, a distance known as the interquartile range (IQR). In the middle of the box is a line that displays the median, i.e. 50th percentile, of the distribution. These three lines give you a sense of the spread of the distribution and whether or not the distribution is symmetric about the median or skewed to one side.</p>
+<ul>
+<li><p>Visual points that display observations that fall more than 1.5 times the IQR from either edge of the box. These outlying points are unusual so are plotted individually.</p></li>
+<li><p>A line (or whisker) that extends from each end of the box and goes to the farthest non-outlier point in the distribution.</p></li>
+</ul>
+<pre class="r"><code>ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+  geom_boxplot()</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
+  geom_boxplot()</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-22-1.png" width="672" />
+To make the trend easier to see, we can reorder <code>class</code> based on the median value of <code>hwy</code>:</p>
+<pre class="r"><code>ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p>If you have long variable names, <code>geom_boxplot()</code> will work better if you flip it 90°. You can do that with <code>coord_flip()</code>.</p>
+<pre class="r"><code>ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy)) +
+  coord_flip()</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+</div>
+<div id="two-categorical-variable" class="section level3">
+<h3>Two categorical variable</h3>
+<p>To visualise the covariation between categorical variables, you’ll need to count the number of observations for each combination. One way to do that is to rely on the built-in <code>geom_count()</code>:</p>
+<pre class="r"><code>ggplot(data = diamonds) +
+  geom_count(mapping = aes(x = cut, y = color))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p>Another approach is to compute the count with dplyr:</p>
+<pre class="r"><code>diamonds %&gt;% 
+  count(color, cut)</code></pre>
+<pre><code>## # A tibble: 35 x 3
+##    color cut           n
+##    &lt;ord&gt; &lt;ord&gt;     &lt;int&gt;
+##  1 D     Fair        163
+##  2 D     Good        662
+##  3 D     Very Good  1513
+##  4 D     Premium    1603
+##  5 D     Ideal      2834
+##  6 E     Fair        224
+##  7 E     Good        933
+##  8 E     Very Good  2400
+##  9 E     Premium    2337
+## 10 E     Ideal      3903
+## # ... with 25 more rows</code></pre>
+<p>Then visualise with geom_tile() and the fill aesthetic:</p>
+<pre class="r"><code>diamonds %&gt;% 
+  count(color, cut) %&gt;% 
+  ggplot(mapping = aes(x = color, y = cut)) +
+  geom_tile(mapping = aes(fill = n))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+</div>
+</div>
+<div id="two-continuous-variables" class="section level2">
+<h2>Two continuous variables</h2>
+<pre class="r"><code>ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = carat, y = price))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-28-1.png" width="672" />
+Scatterplots become less useful as the size of your dataset grows, because points begin to overplot, and pile up into areas of uniform black (as above).One way to fix the problem: using the <code>alpha</code> aesthetic to add transparency.</p>
+<pre class="r"><code>ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = carat, y =price), alpha = 1 / 100)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p>But using transparency can be challenging for very large datasets. Another solution is to use bin. Previously you used <code>geom_histogram()</code> and <code>geom_freqpoly()</code> to bin in one dimension. Now you’ll learn how to use <code>geom_bin2d()</code> and <code>geom_hex()</code> to bin in two dimensions.</p>
+<p><code>geom_bin2d()</code> and <code>geom_hex()</code> divide the coordinate plane into 2d bins and then use a fill color to display how many points fall into each bin. <code>geom_bin2d()</code> creates rectangular bins. <code>geom_hex()</code> creates hexagonal bins. You will need to install the hexbin package to use <code>geom_hex()</code>.</p>
+<pre class="r"><code>p1 &lt;- ggplot(data = smaller) +
+  geom_bin2d(mapping = aes(x = carat, y = price))
+
+p2 &lt;- ggplot(data = smaller) +
+  geom_hex(mapping = aes(x = carat, y = price))
+p1 + p2</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-30-1.png" width="672" />
+Another option is to bin one continuous variable so it acts like a categorical variable. Then you can use one of the techniques for visualising the combination of a categorical and a continuous variable.</p>
+<pre class="r"><code>ggplot(data = smaller, mapping = aes(x = carat, y =price)) +
+  geom_boxplot(mapping = aes(group = cut_width(carat, 0.1)))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-31-1.png" width="672" />
+By default, boxplots look roughly the same (apart from number of outliers) regardless of how many observations there are, so it’s difficult to tell that each boxplot summarises a different number of points. One way to show that is to make the width of the boxplot proportional to the number of points with <code>varwidth = TRUE</code>.</p>
+<pre class="r"><code>ggplot(data = smaller, mapping = aes(x = carat, y = price)) + 
+  geom_boxplot(mapping = aes(group = cut_width(carat, 0.1)), varwidth = T)</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<p>Another approach is to display approximately the same number of points in each bin. That’s the job of <code>cut_number()</code>:</p>
+<pre class="r"><code>ggplot(data = smaller, mapping = aes(x = carat, y = price)) + 
+  geom_boxplot(mapping = aes(group = cut_number(carat, 20)))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-33-1.png" width="672" />
+## Patterns and models</p>
+<pre class="r"><code>ggplot(data = faithful) + 
+  geom_point(mapping = aes(x = eruptions, y = waiting))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<pre class="r"><code>mod &lt;- lm(log(price) ~ log(carat), data = diamonds)
+
+diamonds4 &lt;- diamonds %&gt;% 
+  add_residuals(mod) %&gt;% 
+  mutate(resid = exp(resid))
+
+ggplot(data = diamonds4) +
+  geom_point(mapping = aes(x = carat, y =resid))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(data = diamonds4) +
+  geom_boxplot(mapping = aes(x = cut, y = resid))</code></pre>
+<p><img src="/posts/2022-01-14-r-for-data-science-exploratory-data-analysis/RData2_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+</div>
