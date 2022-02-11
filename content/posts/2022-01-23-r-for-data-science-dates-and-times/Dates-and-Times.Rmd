@@ -1,0 +1,499 @@
+---
+title: R for Data Science Dates and Times
+author: Zhang Jiashun
+date: '2022-01-23'
+slug: []
+categories:
+  - R
+tags:
+  - Data
+  - R
+description: ~
+featured_image: ~
+---
+```{r}
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+library(magrittr)
+```
+
+```{r}
+flights %>% 
+  select(year, month, day, hour, minute) %>% 
+  mutate(departure = make_datetime(year, month, day, hour, minute))
+```
+```{r}
+dmy("10102017")
+```
+```{r}
+ymd(20170131)
+```
+
+```{r}
+flights
+```
+```{r}
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+flights_dt <- flights %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  ) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+
+flights_dt
+```
+```{r}
+flights_dt %>% 
+  ggplot(aes(dep_time)) + 
+  geom_freqpoly(binwidth = 86400) # 86400 seconds = 1 day
+```
+```{r}
+flights_dt %>% 
+  filter(dep_time < ymd(20130102)) %>% 
+  ggplot(aes(dep_time)) + 
+  geom_freqpoly(binwidth = 600) # 600 s = 10 minutes
+```
+
+
+```{r}
+d1 <- "January 1, 2010"
+d2 <- "2015-Mar-07"
+d3 <- "06-Jun-2017"
+d4 <- c("August 19 (2015)", "July 1 (2015)")
+d5 <- "12/30/14" # Dec 30, 2014
+```
+
+```{r}
+flights_dt %>% 
+  mutate(wday = wday(dep_time, label = TRUE)) %>% 
+  ggplot(aes(x = wday)) +
+    geom_bar()
+```
+
+```{r}
+flights_dt %>% 
+  count(month = floor_date(dep_time, "month")) %>%
+  ggplot(aes(month, n)) +
+    geom_line()
+```
+
+```{r}
+flights_dt %>% 
+  count(month = month(dep_time)) %>% 
+  ggplot(aes(month, n)) +
+    geom_line()
+```
+```{r}
+ymd("2015-02-01") %>% 
+  update(mday = 30)
+#> [1] "2015-03-02"
+ymd("2015-02-01") %>% 
+  update(hour = 400)
+#> [1] "2015-02-17 16:00:00 UTC"
+```
+
+```{r}
+flights_dt %>% 
+  mutate(dep_hour = update(dep_time, yday = 1)) %>% 
+  ggplot(aes(dep_hour)) +
+    geom_freqpoly(binwidth = 300)
+```
+```{r}
+z_age <- today() - ymd(20010323)
+z_age 
+# Time difference of 7612 days
+```
+```{r}
+as.duration(z_age)
+# [1] "657676800s (~20.84 years)"
+```
+```{r}
+one_pm <- ymd_hms("2016-03-12 13:00:00", tz = "America/New_York")
+
+one_pm
+#> [1] "2016-03-12 13:00:00 EST"
+one_pm + ddays(1)
+#> [1] "2016-03-13 14:00:00 EDT"
+```
+```{r}
+one_pm
+#> [1] "2016-03-12 13:00:00 EST"
+one_pm + days(1)
+#> [1] "2016-03-13 13:00:00 EDT"
+```
+
+```{r}
+years(1)/days(1)
+```
+
+```{r}
+next_year <- today() + years(1)
+(today() %--% next_year) / ddays(1)
+#> [1] 365
+```
+```{r}
+(today() %--% (today() + years(1))) %/% months(1)
+```
+
+```{r}
+Sys.timezone()
+```
+```{r}
+(x1 <- ymd_hms("2015-06-01 12:00:00", tz = "America/New_York"))
+#> [1] "2015-06-01 12:00:00 EDT"
+(x2 <- ymd_hms("2015-06-01 18:00:00", tz = "Europe/Copenhagen"))
+#> [1] "2015-06-01 18:00:00 CEST"
+(x3 <- ymd_hms("2015-06-02 04:00:00", tz = "Pacific/Auckland"))
+#> [1] "2015-06-02 04:00:00 NZST"
+```
+
+```{r}
+x1 - x2
+#> Time difference of 0 secs
+x1 - x3
+#> Time difference of 0 secs
+```
+
+```{r}
+x4 <- c(x1, x2, x3)
+x4
+
+# [1] "2015-06-01 12:00:00 EDT"
+# [2] "2015-06-01 12:00:00 EDT"
+# [3] "2015-06-01 12:00:00 EDT"
+```
+```{r}
+x4a <- with_tz(x4, tzone = "Australia/Lord_Howe")
+x4a
+# [1] "2015-06-02 02:30:00 +1030" "2015-06-02 02:30:00 +1030"
+# [3] "2015-06-02 02:30:00 +1030"
+x4a - x4
+# Time differences in secs
+# [1] 0 0 0
+```
+
+```{r}
+x4b <- force_tz(x4, tzone = "Australia/Lord_Howe")
+x4b
+#> [1] "2015-06-01 12:00:00 +1030" "2015-06-01 12:00:00 +1030"
+#> [3] "2015-06-01 12:00:00 +1030"
+x4b - x4
+#> Time differences in hours
+#> [1] -14.5 -14.5 -14.5
+```
+
+```{r}
+foo_foo <- little_bunny()
+foo_foo %>%
+  hop(through = forest) %>%
+  scoop(up = field_mice) %>%
+  bop(on = head)
+```
+```{r}
+rnorm(100) %>%
+  matrix(ncol = 2) %>%
+  plot() %>%
+  str()
+```
+
+```{r}
+rnorm(100) %>%
+  matrix(ncol = 2) %T>%
+  plot() %>%
+  str()
+```
+
+```{r}
+if (c(TRUE, FALSE)) {}
+```
+
+```{r}
+if (NA) {}
+```
+
+```{r}
+x <- sqrt(2) ^ 2
+x
+#> [1] 2
+x == 2
+#> [1] FALSE
+x - 2
+#> [1] 4.440892e-16
+```
+
+```{r}
+dplyr::near(sqrt(2) ^ 2, 2) 
+```
+```{r}
+x <- c(1, 2)
+sum(x, na.rm = TRUE)
+```
+
+```{r}
+typeof(letters)
+```
+```{r}
+x <- list("a", "b", 1:10)
+length(x)
+#> [1] 3
+```
+```{r}
+typeof(1)
+#> [1] "double"
+typeof(1L)
+#> [1] "integer"
+typeof(1.5L)
+#> [1] 1.5
+```
+```{r}
+x <- sqrt(2L) ^ 2L
+x
+#> [1] 2L
+near(x - 2)
+```
+
+```{r}
+x <- "This is a reasonably long string."
+pryr::object_size(x)
+#> Registered S3 method overwritten by 'pryr':
+#>   method      from
+#>   print.bytes Rcpp
+#> 152 B
+
+y <- rep(x, 1000)
+pryr::object_size(y)
+#> 8.14 kB
+```
+```{r}
+NA_integer_ 
+```
+
+```{r}
+1:10 + 1:3
+```
+
+```{r}
+tibble(x = 1:4, y = 1:2)
+```
+
+```{r}
+tibble(x = 1:4, y = rep(1:2, c(3,1)))
+```
+
+```{r}
+c(x = 1, y = 2, z = 4)
+#> x y z 
+#> 1 2 4
+```
+
+```{r}
+set_names(1:3, c("a", "b", "c"))
+#> a b c 
+#> 1 2 3
+```
+
+```{r}
+x <- c("one", "two", "three", "four", "five")
+x[c(-1, -2)]
+#> [1] "three" "two"   "five"
+```
+
+```{r}
+x <- c(10, 3, NA, 5, 8, 1, NA)
+
+x[!is.na(x)]
+
+x[x %% 2 == 0]
+
+```
+
+```{r}
+x <- c(abc = 1, def = 2, xyz = 5)
+x[c("xyz", "def")]
+```
+
+```{r}
+x <- list(1, 2, 3)
+x
+```
+```{r}
+str(x)
+```
+
+```{r}
+x_named <- list(a = 1, b = 2, c = 3)
+str(x_named)
+```
+
+```{r}
+y <- list("a", 1L, 1.5, TRUE)
+str(y)
+#> List of 4
+#>  $ : chr "a"
+#>  $ : int 1
+#>  $ : num 1.5
+#>  $ : logi TRUE
+```
+
+```{r}
+a <- list(a = 1:3, b = "a string", c = pi, d = list(-1, -5))
+```
+
+```{r}
+str(a[1:2])
+```
+```{r}
+str(a["d"])
+```
+
+```{r}
+a$a
+```
+
+```{r}
+x <- 1:10
+```
+
+```{r}
+attr(x, "greeting")
+```
+```{r}
+attr(x, "greeting") <- "Hi!"
+```
+
+```{r}
+attr(x, "farewell") <- "Bye!"
+```
+
+
+```{r}
+attr(x, "greeting")
+```
+```{r}
+as.Date
+```
+
+```{r}
+methods("as.Date")
+```
+```{r}
+x <- hms::hms(3600)
+print(x)
+```
+
+```{r}
+typeof(x)
+```
+
+```{r}
+attributes(x)
+```
+```{r}
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+```
+
+```{r}
+output <- vector("double", ncol(df))  # 1. output
+for (i in seq_along(df)) {            # 2. sequence
+  output[[i]] <- median(df[[i]])      # 3. body
+}
+output
+```
+```{r}
+library(nycflights13)
+output1 <- vector("list", ncol(flights))
+for (i in seq_along(flights)) {
+  output1[[i]] <- class(flights[[i]])
+}
+output1
+```
+```{r}
+x <- runif(100)
+```
+
+```{r}
+
+```
+
+```{r}
+x <- c(a = 1, b = 2, c = 3, d = 4)
+name <- vector("character", length = length(x))
+value <- vector("double", length = length(x))
+for (i in seq_along(x)) {
+  name[[i]] <- names(x)[[i]]
+  value[[i]] <- x[[i]]
+}
+```
+
+```{r}
+flip <- function() {
+  sample(c("H", "T"), 1)
+}
+flips <- 0
+nhead <- 0
+while(nhead < 3) {
+  if (flip() == "H") {
+    nhead <- nhead + 1
+  }else {
+    nhead <- 0
+  }
+  flips <- flips + 1
+}
+flips
+```
+```{r}
+map_dbl(df, mean, trim = 0.5)
+#>           a           b           c           d 
+#> -0.51850298  0.02779864  0.17295591 -0.61163819
+```
+
+```{r}
+z <- list(x = 1:3, y = 4:5)
+map_int(z, length)
+```
+
+```{r}
+models <- mtcars %>% 
+  split(.$cyl) #%>% 
+  #map(function(df) lm(mpg ~ wt, data = df))
+```
+
+```{r}
+x <- list(list(1, 2, 3), list(4, 5, 6), list(7, 8, 9))
+x %>% map_dbl(2)
+```
+
+```{r}
+x <- list(1, 10, "a")
+y <- x %>% map(safely(log))
+str(y)
+```
+
+```{r}
+x <- list(1, 10, "a")
+x %>% map_dbl(possibly(log, NA_real_))
+```
+
+```{r}
+library(ggplot2)
+plots <- mtcars %>% 
+  split(.$cyl) %>% 
+  map(~ggplot(., aes(mpg, wt)) + geom_point())
+paths <- stringr::str_c(names(plots), ".pdf")
+
+pwalk(list(paths, plots), ggsave, path = tempdir())
+```
+

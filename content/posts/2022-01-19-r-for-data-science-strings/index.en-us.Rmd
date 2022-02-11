@@ -1,0 +1,405 @@
+---
+title: R for Data Science:Strings
+author: Zhang Jiashun
+date: '2022-01-19'
+slug: []
+categories:
+  - R
+tags:
+  - R
+  - Srings
+description: ~
+featured_image: ~
+---
+```{r}
+library(tidyverse)
+library(patchwork)
+```
+
+```{r}
+double_quote <- "\"" 
+```
+```{r}
+x <- c("\"", "\\")
+x
+```
+```{r}
+writeLines(x)
+```
+```{r}
+x <- "\u00b5"
+x
+```
+
+```{r}
+c("one", "two", "three")
+```
+
+```{r}
+str_length(c("\'a", "R for data science", NA))
+#> [1]  1 18 NA
+```
+
+```{r}
+str_c("x", "y")
+#> [1] "xy"
+str_c("x", "y", "z")
+#> [1] "xyz"
+```
+```{r}
+str_c("x", "y", sep = ", ")
+#> [1] "x, y"
+```
+
+```{r}
+x <- c("abc", NA)
+str_c("|-", x, "-|")
+#> [1] "|-abc-|" NA
+str_c("|-", str_replace_na(x), "-|")
+#> [1] "|-abc-|" "|-NA-|"
+```
+
+```{r}
+name <- "Hadley"
+time_of_day <- "morning"
+birthday <- TRUE
+
+str_c(
+  "Good ", time_of_day, " ", name,
+  if (birthday) " and HAPPY BIRTHDAY",
+  "."
+)
+#> [1] "Good morning Hadley."
+```
+```{r}
+str_length(str_c(c("x", "y", "z")))
+#> [1] "x, y, z"
+```
+```{r}
+x <- c("Apple", "Banana", "Pear")
+str_sub(x, 1, 3)
+#> [1] "App" "Ban" "Pea"
+# negative numbers count backwards from end
+str_sub(x, -3, -1)
+#> [1] "ple" "ana" "ear"
+```
+
+```{r}
+str_sub("a", 1, 5)
+#> [1] "a"
+```
+```{r}
+str_sub(x, 1, 1) <- str_to_lower(str_sub(x, 1, 1))
+x
+```
+
+```{r}
+str_to_upper(c("i", "ı"))
+#> [1] "I" "I"
+str_to_upper(c("i", "ı"), locale = "tr")
+#> [1] "İ" "I"
+```
+
+```{r}
+x <- c("apple", "eggplant", "banana")
+
+str_sort(x, locale = "en")  # English
+#> [1] "apple"    "banana"   "eggplant"
+
+str_sort(c("张佳顺", "王婧霞", "feix", "zhang", "zese"), locale = "zh") # Hawaiian
+#> [1] "apple"    "eggplant" "banana"
+```
+```{r}
+a <- c("a", "b", "c")
+a[1]
+str_sub(a, 1)
+```
+```{r}
+str_view_all()
+```
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "an")
+```
+
+```{r}
+str_view(x, ".a.")
+```
+```{r}
+dot <- "\\."
+writeLines(dot)
+```
+
+```{r}
+str_view(c("abc", "a.c", "bef"), "a\\.c")
+```
+```{r}
+x <- "a\\b"
+writeLines(x)
+#> a\b
+
+str_view(x, "\\\\")
+```
+
+```{r}
+x <- "a\\b"
+writeLines(x)
+# a\b
+
+str_view(x, "\\\\")
+```
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "^a")
+```
+
+```{r}
+str_view(x, "a$")
+```
+
+```{r}
+y <- c("apple pie", "apple", "apple cake", "a ap b")
+str_view(x, "apple")
+```
+
+```{r}
+str_view(y, "\bap\b")
+```
+```{r}
+str_view(stringr::words, ".......", match = TRUE)
+```
+
+```{r}
+str_view(c("grey", "gray"), "gr(e|a)y")
+```
+
+```{r}
+vowel <- c("a", "e", "i", "o", "u")
+```
+
+```{r}
+words
+```
+
+```{r}
+str_view_all(words, "^[aeiou]", match = T)
+```
+```{r}
+str_view_all(words, "^[^aeiou]+$", match = T)
+```
+
+```{r}
+str_view(words, "ing$|ise$",match = T)
+```
+```{r}
+str_view(words, "cei|[^c]ie", match = T)
+```
+
+```{r}
+str_view(words, "q[^u]", match = T)
+```
+
+```{r}
+x <- "1888 is the longest year in Roman numerals: MDCCCLXXXVIII"
+```
+
+```{r}
+str_view(x, 'C[LX]+')
+```
+
+```{r}
+writeLines("\d")
+```
+```{r}
+str_view(words, "(.)(.)(.).*\\3\\2\\1", match = TRUE)
+```
+```{r}
+df <- tibble(
+  word = words, 
+  i = seq_along(word)
+)
+```
+
+```{r}
+a <- tibble(
+s = sentences) %>% 
+  mutate(sub = str_extract_all(sentences, colour_match)) %>% 
+  filter(sub != "character(0)")
+```
+
+```{r}
+tibble(sentence = sentences) %>% 
+  extract(sentence, c("article", "noun"), "(a|the) ([^ ]+)", remove = FALSE)
+```
+
+```{r}
+month_levels <- c(
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)
+```
+
+```{r}
+x1 <- c("Dec", "Apr", "Jan", "Mar")
+y1 <- factor(x1, levels = month_levels)
+```
+
+```{r}
+y1
+```
+```{r}
+sort(y1)
+```
+```{r}
+gss_cat
+```
+
+```{r}
+
+levels(gss_cat$race)
+```
+```{r}
+gss_cat %>%
+  count(race)
+#> # A tibble: 3 x 2
+#>   race      n
+#>   <fct> <int>
+#> 1 Other  1959
+#> 2 Black  3129
+#> 3 White 16395
+```
+
+```{r}
+ggplot(gss_cat, aes(race)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(gss_cat, aes(race)) +
+  geom_bar() +
+  scale_x_discrete(drop = FALSE)
+```
+
+```{r}
+relig_summary <- gss_cat %>%
+  group_by(relig) %>%
+  summarise(
+    age = mean(age, na.rm = TRUE),
+    tvhours = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+#> `summarise()` ungrouping output (override with `.groups` argument)
+
+ggplot(relig_summary, aes(tvhours, relig)) + geom_point()
+```
+
+```{r}
+ggplot(relig_summary, aes(tvhours, fct_reorder(relig, tvhours))) +
+  geom_point()
+```
+
+```{r}
+rincome_summary <- gss_cat %>%
+  group_by(rincome) %>%
+  summarise(
+    age = mean(age, na.rm = TRUE),
+    tvhours = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+```
+
+```{r}
+ggplot(rincome_summary, aes(age, rincome)) +
+  geom_point()
+```
+
+```{r}
+ggplot(rincome_summary, aes(age, fct_relevel(rincome, "Not applicable"))) +
+  geom_point()
+```
+
+```{r}
+by_age <- gss_cat %>%
+  filter(!is.na(age)) %>%
+  count(age, marital) %>%
+  group_by(age) %>%
+  mutate(prop = n / sum(n))
+```
+
+```{r}
+ggplot(by_age, aes(age, prop, colour = marital)) +
+  geom_line(na.rm = TRUE)
+```
+
+```{r}
+g1 <- ggplot(by_age, aes(age, prop, colour = marital)) +
+  geom_line(size = 1.1, na.rm = TRUE)
+g2 <- ggplot() +
+  geom_line(data = by_age, mapping = aes(age, prop, colour = fct_reorder2(marital, age, prop)), size = 1.1) +
+  labs(colour = "marital") +
+  geom_vline(xintercept = max(by_age$age))
+g1 + g2
+```
+```{r}
+gss_cat %>%
+  mutate(marital = marital %>% fct_infreq()) %>%
+  ggplot(aes(marital)) +
+    geom_bar()
+```
+
+```{r}
+gss_cat %>% count(partyid)
+```
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+    "Republican, strong"    = "Strong republican",
+    "Republican, weak"      = "Not str republican",
+    "Independent, near rep" = "Ind,near rep",
+    "Independent, near dem" = "Ind,near dem",
+    "Democrat, weak"        = "Not str democrat",
+    "Democrat, strong"      = "Strong democrat"
+  )) %>%
+  count(partyid)
+```
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_recode(partyid,
+    "Republican, strong"    = "Strong republican",
+    "Republican, weak"      = "Not str republican",
+    "Independent, near rep" = "Ind,near rep",
+    "Independent, near dem" = "Ind,near dem",
+    "Democrat, weak"        = "Not str democrat",
+    "Democrat, strong"      = "Strong democrat",
+    "Other"                 = "No answer",
+    "Other"                 = "Don't know",
+    "Other"                 = "Other party"
+  )) %>%
+  count(partyid)
+```
+
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_collapse(partyid,
+    other = c("No answer", "Don't know", "Other party"),
+    rep = c("Strong republican", "Not str republican"),
+    ind = c("Ind,near rep", "Independent", "Ind,near dem"),
+    dem = c("Not str democrat", "Strong democrat")
+  )) %>%
+  count(partyid)
+```
+
+```{r}
+a2 <- gss_cat %>%
+  mutate(relig = fct_recode(relig, "OO" = "Other")) 
+```
+
+```{r}
+a1 <- a2 %>%
+  mutate(relig = fct_lump(relig, n = 10)) %>%
+  count(relig, sort = TRUE) %>%
+  print(n = Inf)
+```
+

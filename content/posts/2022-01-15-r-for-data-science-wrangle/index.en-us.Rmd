@@ -1,0 +1,651 @@
+---
+title: R for Data Science Wrangle
+author: Zhang Jiashun
+date: '2022-01-15'
+slug: []
+categories:
+  - R
+tags:
+  - Data
+  - R
+description: ~
+featured_image: ~
+---
+
+# Tibbles
+
+```{r}
+library(tidyverse)
+library(hms)
+library(nycflights13)
+```
+
+Tibbles are one of the unifying features of the tidyverse. Most other R packages use regular data frames, so you might want to coerce a data frame to a tibble. You can do that with `as_tibble()`:
+
+```{r}
+as_tibble(iris)
+```
+You can create a new tibble from individual vectors with `tibble()`:
+
+```{r}
+tibble(
+  x = 1:5,
+  y = 1,
+  z = x ^ 2 + y
+)
+```
+
+It’s possible for a tibble to have column names that are not valid R variable names, aka **non-syntactic** names. For example, they might not start with a letter, or they might contain unusual characters like a space. To refer to these variables, you need to surround them with backticks:
+
+```{r}
+tb <- tibble(
+  `:)` = "smile",
+  ` ` = "space",
+  `2000` = "number"
+)
+tb
+```
+Another way to create a tibble is with `tribble()`, short for transposed tibble. 
+
+`tribble()` is customised for data entry in code: column headings are defined by formulas (i.e. they start with `~`), and entries are separated by commas. The line starting with `#` makes it really clear where the header is.
+
+```{r}
+tribble(
+  ~x, ~y, ~z,
+  #--|--|----
+  "a", 2, 3.6,
+  "b", 1, 8.5
+)
+```
+## Tibbles vs. data.frame
+
+### Printing
+
+```{r}
+tibble(
+  a = lubridate::now() + runif(1e3) * 86400,
+  b = lubridate::today() + runif(1e3) * 30,
+  c = 1:1e3,
+  d = runif(1e3),
+  e = sample(letters, 1e3, replace = TRUE)
+)
+```
+You can explicitly `print()` the data frame and control the number of `rows (n)` and the width of the display. `width = Inf` will display all columns:
+
+```{r}
+nycflights13::flights %>% 
+  print(n = 10,width = 2)
+```
+You can also control the default print behaviour by setting options:
+
+
+- `options(tibble.print_max = n, tibble.print_min = m)`: if more than `n` rows, print only `m` rows. Use `options(tibble.print_min = Inf)` to always show all rows.
+
+- Use `options(tibble.width = Inf)` to always print all columns, regardless of the width of the screen.
+
+A final option is to use RStudio’s built-in data viewer to get a scrollable view of the complete dataset. This is also often useful at the end of a long chain of manipulations.
+
+```{r}
+nycflights13::flights %>% 
+  View()
+```
+
+### Subsetting
+
+```{r}
+df <- tibble(
+  x = runif(5),
+  y = rnorm(5)
+)
+```
+
+```{r}
+df %>% 
+  .$x
+```
+
+```{r}
+df %>% 
+  .["x"]
+```
+
+```{r}
+df %>% 
+  .[["x"]]
+```
+## Interacting with older code
+
+Some older functions don’t work with tibbles. If you encounter one of these functions, use `as.data.frame()` to turn a tibble back to a `data.frame`:
+
+```{r}
+class(as.data.frame(tb))
+```
+With tibbles, `[` always returns another tibble.
+
+The function `tibble::enframe()` converts named vectors to a data frame with names and values:
+
+```{r}
+enframe(c(a = 1, b =2, c = 3))
+```
+
+# Data import
+
+When you run `read_csv()` it prints out a column specification that gives the name and type of each column.
+
+```{r}
+read_csv("a,b,c
+         1,2,3
+         4,5,6")
+```
+
+`read_csv()` uses the first line of the data for the column names, which is a very common convention. 
+
+There are two cases where you might want to tweak this behaviour:
+
+1. Sometimes there are a few lines of metadata at the top of the file. You can use `skip = n` to skip the first `n` lines; or use `comment = "#"` to drop all lines that start with (e.g.) `#`.
+
+```{r}
+read_csv("The first line of metadata
+         The second line of metadata
+         x,y,z
+         1,2,3",
+         skip = 2)
+
+read_csv("# A comment I want to skip 
+         x,y,z
+         1,2,3",
+         comment = "#")
+```
+
+2. The data might not have column names. You can use `col_names = FALSE` to tell `read_csv()` not to treat the first row as headings, and instead label them sequentially from `X1` to `Xn`:
+
+```{r}
+read_csv("1,2,3\n4,5,6", col_names = FALSE)
+```
+
+Alternatively you can pass `col_names` a character vector which will be used as the column names:
+
+```{r}
+read_csv("1,2,3\n4,5,6", col_names = c("x", "y", "z"))
+```
+
+Another option that commonly needs tweaking is `na`: this specifies the value (or values) that are used to represent missing values in your file:
+
+```{r}
+read_csv("a,b,c\n1,2,.", na = ".")
+```
+
+## Paring a vector
+
+`parse_*()` functions take a character vector and return a more specialised vector like a logical, integer, or date:
+
+```{r}
+str(parse_logical(c("TRUE", "FALSE", "NA")))
+```
+```{r}
+str(parse_integer(c("1", "2", "3")))
+```
+```{r}
+str(parse_date(c("2010-01-01", "1979-10-14")))
+```
+`parse_*()` functions are uniform: the first argument is a character vector to parse, and the `na` argument specifies which strings should be treated as missing:
+
+```{r}
+parse_integer(c("1", "231", ".", "456"), na = ".")
+```
+
+If parsing fails, you’ll get a warning:
+
+```{r}
+x <- parse_integer(c("123", "345", "abc", "123.45"))
+```
+
+And the failures will be missing in the output:
+
+```{r}
+x
+```
+
+If there are many parsing failures, you’ll need to use `problems()` to get the complete set. This returns a tibble, which you can then manipulate with dplyr.
+
+```{r}
+problems(x)
+```
+### Numbers
+
+```{r}
+parse_double("1,23", locale = locale(decimal_mark = ","))
+```
+
+```{r}
+parse_number("$100")
+#[1] 100
+parse_number("20%")
+#[1] 20
+parse_number("It cost $123.45")
+#[1] 123.45
+```
+```{r}
+parse_number("$123,456,789")
+```
+
+```{r}
+parse_number("123.456.789", locale = locale(grouping_mark = "."))
+```
+```{r}
+parse_number("123'456'789", locale = locale(grouping_mark = "'"))
+```
+```{r}
+# Used in Switzerland
+parse_number("123'456'789", locale = locale(grouping_mark = "'"))
+#> [1] 123456789
+```
+
+```{r}
+charToRaw("Hadley")
+```
+
+```{r}
+x1 <- "El Ni\xf1o was particularly bad this year"
+x2 <- "\x82\xb1\x82\xf1\x82\xc9\x82\xbf\x82\xcd"
+parse_character(x1, locale = locale(encoding = "Latin1"))
+parse_character(x2, locale = locale(encoding = "Shift-JIS"))
+```
+
+```{r}
+guess_encoding(charToRaw(x1))
+guess_encoding(charToRaw(x2))
+```
+
+```{r}
+guess_encoding(charToRaw(x2))
+```
+
+```{r}
+fruit <- c("apple", "banana")
+parse_factor(c("apple", "banana", "bananana"), levels = fruit)
+# Warning: 1 parsing failure.
+# row col           expected   actual
+#   3  -- value in level set bananana
+
+# [1] apple  banana <NA>  
+# attr(,"problems")
+# Levels: apple banana
+```
+
+```{r}
+parse_datetime("2010-10-01T2010")
+#> [1] "2010-10-01 20:10:00 UTC"
+# 如果时间被省略了，那么它就会被设置为午夜
+parse_datetime("20101010")
+#> [1] "2010-10-10 UTC"
+```
+```{r}
+parse_date("2010-10-01")
+```
+```{r}
+parse_time("01:10 pm")
+# 01:10:00
+parse_time("20:10:01")
+# 20:10:01
+```
+```{r}
+parse_date("01/02/15", "%m/%d/%y")
+# [1] "2015-01-02"
+parse_date("01/02/15", "%d/%m/%y")
+# [1] "2015-02-01"
+parse_date("01/02/15", "%y/%m/%d")
+# [1] "2001-02-15"
+```
+
+```{r}
+parse_date("1 一月 2015", "%d %B %Y", locale = locale("zh"))
+```
+```{r}
+t2 <- "11:15:10.12 PM"
+parse_time(t2, "%H:%M:%OS %p")
+```
+## Parsing a file
+
+```{r}
+challenge <- read_csv(readr_example("challenge.csv"))
+challenge
+```
+```{r}
+challenge <- read_csv(
+ readr_example("challenge.csv"),
+ col_types = cols(
+ x = col_double(),
+ y = col_date()
+ )
+)
+```
+```{r}
+stop_for_problems(read_csv(readr_example("challenge.csv")))
+```
+```{r}
+challenge2 <- read_csv(readr_example("challenge.csv"),
+ col_types = cols(.default = col_character())
+)
+type_convert(challenge2)
+```
+
+```{r}
+write_rds(challenge, "challenge.rds")
+read_rds("challenge.rds")
+```
+```{r}
+library(feather)
+write_feather(challenge, "challenge.feather")
+read_feather("challenge.feather")
+```
+
+```{r}
+(table4a <- tribble(
+  ~country, ~`1999`, ~`2000`,
+  #------|-------|-----
+  "Afghanistan", 745,   2666,
+  "Brazil",      37737,  80488,
+  "China",      212258, 213766
+))
+```
+```{r}
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+```
+
+```{r}
+# population
+table4b <- tribble( 
+ ~country,    ~`1999`,     ~`2000`,
+ #----------|---------|-------------
+ "Afghanistan",   19987071,   20595360,
+ "Brazil",       172006362,  174504898,
+ "China",       1272915272, 1280428583
+)
+```
+
+```{r}
+table2 %>% 
+  pivot_wider(names_from = type, values_from = count)
+```
+
+```{r}
+people <- tribble(
+  ~name,             ~names,  ~values,
+  #-----------------|--------|------
+  "Phillip Woods",   "age",       45,
+  "Phillip Woods",   "height",   186,
+  "Phillip Woods",   "age",       50,
+  "Jessica Cordero", "age",       37,
+  "Jessica Cordero", "height",   156
+)
+
+```
+
+
+```{r}
+people %>% 
+  mutate(code = c(1:length(name))) %>% 
+  pivot_wider(names_from = names, values_from = values)
+```
+
+```{r}
+table3 <- tribble(
+   ~country,      ~year,             ~rate,             
+  #-------------|-------|------------------           
+   "Afghanistan",  1999,      "745/19987071",     
+   "Afghanistan",  2000,     "2666/20595360",    
+   "Brazil",       1999,   "37737/172006362",  
+   "Brazil",       2000,   "80488/174504898",  
+   "China",        1999, "212258/1272915272",
+   "China",        2000, "213766/1280428583"
+)
+```
+
+```{r}
+table3
+```
+
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+```
+
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), convert = T)
+```
+
+```{r}
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+```
+
+```{r}
+tidyr::table5
+```
+
+```{r}
+table5 %>% 
+  unite(new, century, year)
+```
+
+```{r}
+table5 %>% 
+  unite(new, century, year, sep = "")
+```
+
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"))
+```
+```{r}
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"))
+```
+
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+```
+
+```{r}
+stocks
+```
+
+```{r}
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return)
+```
+
+```{r}
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(cols = c(`2015`, `2016`),
+               names_to = "year",
+               values_to = "return",
+               values_drop_na = TRUE
+               )
+```
+
+```{r}
+stocks %>% 
+  complete(year, qtr)
+```
+```{r}
+who
+```
+```{r}
+who1 <- who %>% 
+  pivot_longer(cols = c(5:length(colnames(who))), 
+               names_to = "key",
+               values_to = "cases",
+               values_drop_na = TRUE
+               )
+```
+
+```{r}
+who1 %>% 
+  count(key)
+```
+```{r}
+who2 <- who1 %>% 
+  mutate(key = str_replace(key, "newrel", "new_rel"))
+who2
+```
+
+```{r}
+who3 <- who2 %>% 
+  separate(key, into = c("new", "type", "sexage"), sep = "_")
+who3
+```
+```{r}
+who3 %>% 
+  count(new)
+
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+  
+```
+
+```{r}
+who4 %>% 
+  separate(sexage, into = c("sex", "age"), sep = 1)
+```
+```{r}
+planes %>% 
+  count(tailnum) %>% 
+  filter(n > 1)
+```
+```{r}
+weather %>% 
+  count(year, month, day, hour, origin) %>% 
+  filter(n > 1)
+```
+```{r}
+flights %>%
+  arrange(year, month, day, sched_dep_time, carrier, flight) %>%
+  mutate(flight_id = row_number()) %>%
+  glimpse()
+```
+```{r}
+flights2 <- flights %>% 
+  select(year:day, hour, origin, dest, tailnum, carrier)
+flights2
+```
+```{r}
+flights2 %>% 
+  select(-origin, -dest) %>% 
+  left_join(airlines, by = "carrier")
+```
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     3, "x3"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2",
+     4, "y3"
+)
+```
+
+```{r}
+x %>% 
+  inner_join(y, by = "key")
+```
+
+```{r}
+x <- tribble(
+  ~key, ~val_x,
+     1, "x1",
+     2, "x2",
+     2, "x3",
+     1, "x4"
+)
+y <- tribble(
+  ~key, ~val_y,
+     1, "y1",
+     2, "y2"
+)
+left_join(x, y, by = "key")
+#> # A tibble: 4 x 3
+#>     key val_x val_y
+#>   <dbl> <chr> <chr>
+#> 1     1 x1    y1   
+#> 2     2 x2    y2   
+#> 3     2 x3    y2   
+#> 4     1 x4    y1
+```
+```{r}
+weather
+```
+```{r}
+flights2 %>% 
+  left_join(weather)
+```
+
+
+```{r}
+flights2 %>% 
+  left_join(planes, by = "tailnum")
+```
+```{r}
+airports
+```
+```{r}
+d <- flights2 %>% 
+  left_join(airports, c("dest" = "faa"))
+```
+```{r}
+top_dest <- flights %>% 
+  count(dest, sort = TRUE) %>% 
+  head(10)
+top_dest
+```
+```{r}
+flights %>% 
+  semi_join(top_dest)
+```
+
+```{r}
+flights %>% 
+  anti_join(planes, by = "tailnum") %>% 
+  count(tailnum, sort = TRUE)
+```
+```{r}
+df1 <- tribble(
+  ~x, ~y,
+   1,  1,
+   2,  1
+)
+df2 <- tribble(
+  ~x, ~y,
+   1,  1,
+   1,  2
+)
+```
+
+```{r}
+intersect(df1, df2)
+```
+
+```{r}
+union(df1, df2)
+```
+
+```{r}
+setdiff(df1, df2)
+```
+
+```{r}
+setdiff(df2, df1)
+```
+
